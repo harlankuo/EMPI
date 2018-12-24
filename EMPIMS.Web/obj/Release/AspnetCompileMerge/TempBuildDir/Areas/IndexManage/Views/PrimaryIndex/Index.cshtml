@@ -1,0 +1,584 @@
+﻿@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Index.cshtml";
+}
+<style>
+    #sup-searchPanel {
+        z-index: 1 !important;
+    }
+
+    .select2-results {
+        z-index: 2 !important;
+    }
+</style>
+<script>
+    $(function () {
+        gridList();
+        $("#txt_keyword").focus();
+        document.onkeydown = function (event) {
+            if (event.keyCode == 13) {
+                if ($("#sup-searchPanel").css("display") == "none") {
+                    $("#btn_search").click();
+                } else {
+                    $("#supsearch").click();
+                }
+
+            }
+        }
+    });
+
+
+    //加载列表
+    function gridList() {
+        $("#GENDER_NAME").bindSelect({
+            defaultText: "==请选择==",
+            id: "name",
+            text: "name",
+            data: top.clients.gender
+        });
+        $("#MARITAL_STATUS_CODE").bindSelect({
+            defaultText: "==请选择==",
+            id: "name",
+            text: "name",
+            data: top.clients.marriage
+        });
+        $("#ETHNIC_GROUP_NAME").bindSelect({
+            defaultText: "==请选择==",
+            id: "name",
+            text: "name",
+            data: top.clients.nation,
+            search: true
+        });
+        $("#ABO_BLOOD_TYPE_CODE").bindSelect({
+            defaultText: "==请选择==",
+            id: "code",
+            text: "name",
+            data: top.clients.abo_blood_type
+        });
+        var $gridList = $("#gridList");
+
+        var rows = 20;
+        var page = 1;
+        var sidx = 'CREATE_TIME';
+        var sord = "desc";
+        $gridList.dataGrid({
+            height: $(window).height() - 120,
+            datatype: "local",
+            colModel: [
+                { label: '主键', name: '_id', hidden: true },
+                { label: '主索引主键', name: 'PERSON_SBR_ID', hidden: true },
+                 {
+                     label: '状态', name: 'STATUS', width: 50, align: 'center',
+                     formatter: function (cellvalue, options, rowObject) {
+                         if (cellvalue == "A") {
+                             return "<span class=\"label label-primary\">已激活</span>";
+                         } else if (cellvalue == "I") {
+                             return "<span class=\"label label-default\">已停用</span>";
+                         } else if (cellvalue == "M") {
+                             return "<span class=\"label label-warning\">已合并</span>";
+                         } else {
+                             return "<span class=\"label label-default\">" + cellvalue + "</span>";
+                         }
+                     }
+                 },
+                { label: '患者主索引号', name: 'EMPI_ID', width: 150, align: 'left' },
+                { label: '姓名', name: 'NAME', width: 80, align: 'left' },
+                { label: '性别', name: 'GENDER_NAME', width: 50, align: 'center' },
+                {
+                    label: '生日', name: 'DOB', width: 100, align: 'center',
+                    formatter: "date", formatoptions: { srcformat: 'Y-m-d', newformat: 'Y-m-d' }
+                },
+                { label: '身份证件名称', name: 'ID_TYPE_NAME', width: 80, align: 'center' },
+                { label: '身份证件号码', name: 'ID_NO', width: 150, align: 'center' },
+                { label: '联系电话', name: 'PHONE_NO', width: 80, align: 'center' },
+                { label: '婚姻状况', name: 'MARITAL_STATUS_NAME', width: 80, align: 'center' },
+                { label: '民族', name: 'ETHNIC_GROUP_NAME', width: 50, align: 'center' },
+                { label: '血型', name: 'ABO_BLOOD_TYPE_NAME', width: 80, align: 'center' },
+                { label: '工作单位', name: 'EMPLOYER_NAME', width: 100, align: 'left' },
+                {
+                    label: '家庭地址', name: 'POB_PROVINCE', width: 120, align: 'left',
+                    formatter: function (cellvalue, options, rowObject) {
+                        return (rowObject.POB_PROVINCE == null ? "" : rowObject.POB_PROVINCE)
+                                + (rowObject.POB_CITY == null ? "" : rowObject.POB_CITY)
+                                + (rowObject.POB_COUNTY == null ? "" : rowObject.POB_COUNTY)
+                    }
+                },
+                {
+                    label: '创建时间', name: 'CREATE_TIME', width: 120, align: 'left'
+                },
+                { label: '创建人', name: 'CREATE_BY', width: 80, align: 'left' }
+            ],
+            pager: "#gridPager",
+            sortname: 'CREATE_TIME',
+            sortorder: 'desc',
+            viewrecords: true,
+            rowNum: 20, //每页显示记录数   
+            viewrecords: true, //是否显示行数   
+            rowList: [20, 30, 40, 50, 100], //可调整每页显示的记录数            
+            multiselect: true,
+            beforeRequest: function () {
+
+            },
+            gridComplete: function () {
+
+            },
+            loadComplete: function (data) {
+
+                var op = {
+                    url: "/IndexManage/PrimaryIndex/GetGridJson",
+                    rows: rows,
+                    page: page,
+                    sidx: sidx,
+                    sord: sord
+                };
+                GetData(op);
+            },
+            loadError: function (xhr, status, error) {
+
+            },
+            onPaging: function (pgBtn) {
+
+                rows = $(".ui-pg-selbox").val();
+                page = Number($('.ui-pg-input').val());
+                switch (pgBtn) {
+                    case "next":
+                        page++;
+                        break;
+                    case "prev":
+                        page--;
+                        break;
+                    case "first":
+                        page = 1;
+                        break;
+                    case "last":
+                        page = $("#sp_1_gridPager").text().replace(" ", "");
+                        $(".ui-pg-input").val(page);
+                        break;
+                    default:
+                }
+            },
+            onSortCol: function (name, index, sortorder) {
+                sidx = name;
+                sord = sortorder;
+            }
+        });
+        $("#btn_search").click(function () {
+            var op = {
+                url: "/IndexManage/PrimaryIndex/GetGridJson",
+                rows: rows,
+                page: page,
+                sidx: sidx,
+                sord: sord
+            };
+            GetData(op);
+        });
+
+        $("#btn-supsearch").click(function () {
+
+            var isBlock = $("#sup-searchPanel").css("display");
+            if (isBlock == "block") {
+                $("#sup-searchPanel").hide();
+            } else {
+                $("#sup-searchPanel").show();
+                $("#NAME").focus();
+            }
+        });
+
+        $("#supsearch").click(function () {
+
+            var op = {
+                rows: rows,
+                page: page,
+                sidx: sidx,
+                sord: sord
+            };
+            btn_supsearch(op);
+        });
+    }
+
+    function GetData(option) {
+
+        var _data = null;
+        $.ajax({
+            url: option.url,
+            dataType: "json",
+            data: {
+                status: $("#status").val(),
+                _search: false,
+                rows: option.rows,
+                page: option.page,
+                sidx: option.sidx,
+                sord: option.sord,
+                keywords: $("#txt_keyword").val()
+            },
+            async: true,
+            beforeSend: function () {
+                $("#gridList").jqGrid("clearGridData");
+                $("#gridList tbody").append("<tr><td id='result' colspan='4' style='border-bottom:none;'><span style='font-size:large;'>加载中...</span></td></tr>");
+            },
+            success: function (data) {
+                _data = data;
+                $("#gridList")[0].addJSONData(_data);
+                if (data.rows.length == 0) {
+                    $("#gridList tbody").append("<tr><td id='result' colspan='4' style='border-bottom:none;'><span style='color:red;font-size:large;'>暂无数据</span></td></tr>");
+                }
+            },
+            complete: function () {
+
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                $("#gridList").jqGrid("clearGridData");
+                $("#gridList tbody").append("<tr><td id='result' colspan='4' style='border-bottom:none;'><span style='color:red;font-size:large;'>请求发生错误</span></td></tr>");
+            }
+        });
+    }
+
+    //添加索引
+    function btn_add() {
+        $.modalOpen({
+            id: "Form",
+            title: "新增索引",
+            url: "/IndexManage/PrimaryIndex/Form",
+            width: "700px",
+            height: "550px",
+            callBack: function (iframeId) {
+                top.frames[iframeId].submitForm();
+            }
+        });
+    }
+
+    //查看明细
+    function btn_details() {
+        var keyValue = $("#gridList").jqGridSelectNameValue("PERSON_SBR_ID");
+        if ($.oneRowOnly(keyValue)) {
+            $.modalOpen({
+                id: "Details",
+                title: "索引明细",
+                url: "/IndexManage/PrimaryIndex/Form?keyValue=" + keyValue,
+                width: "700px",
+                height: "550px",
+                btn: null,
+            });
+        }
+    }
+
+    //高级检索
+    function btn_supsearch(option) {
+        var val = $("from input,form select").val();
+        var flag = false;
+        $("form input,form select").each(function (index, element) {
+            if (!!element.value) {
+                flag = true;
+                return false;
+            }
+        });
+        if (flag) {
+            var _postData = $("#form1").formSerialize();
+            $.ajax({
+                url: "/IndexManage/PrimaryIndex/GetGridJsonBySup",
+                dataType: "json",
+                data: {
+                    _search: false,
+                    rows: option.rows,
+                    page: option.page,
+                    sidx: option.sidx,
+                    sord: option.sord,
+                    supData: JSON.stringify(_postData)
+                },
+                async: true,
+                beforeSend: function () {
+                    $("#gridList").jqGrid("clearGridData");
+                    $("#gridList tbody").append("<tr><td id='result' colspan='4' style='border-bottom:none;'><span style='font-size:large;'>加载中...</span></td></tr>");
+                },
+                success: function (data) {
+                    _data = data;
+                    $("#gridList")[0].addJSONData(_data);
+                    if (data.rows.length == 0) {
+                        $("#gridList tbody").append("<tr><td id='result' colspan='4' style='border-bottom:none;'><span style='color:red;font-size:large;'>暂无数据</span></td></tr>");
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    $("#gridList tbody").append("<tr><td id='result' colspan='4' style='border-bottom:none;'><span style='color:red;font-size:large;'>请求发生错误</span></td></tr>");
+                }
+            });
+            $("#sup-searchPanel").hide();
+        } else {
+            $.modalMsg("请至少填写一个检索条件！", "warning");
+        }
+    }
+
+    //详细信息
+    function btn_info() {
+        var keyValue = $("#gridList").jqGridSelectNameValue("PERSON_SBR_ID");
+        if ($.oneRowOnly(keyValue)) {
+            $.nfinetab.addTabSingle("IndexDetails", "/IndexManage/PrimaryIndex/Details?keyValue=" + keyValue, "查看索引");
+        }
+    }
+
+    //停用
+    function btn_disabled() {
+        var keyValue = $("#gridList").jqGridSelectNameValue("PERSON_SBR_ID");
+        if (!!keyValue) {
+            $.modalConfirm("注：您确定要【停用】所选项主索引吗？", function (r) {
+                if (r) {
+                    //$.ajax({
+                    //    url: "/IndexManage/PrimaryIndex/CheckDuplicate?keyValue=" + keyValue,
+                    //    dataType: "json",
+                    //    async: true,
+                    //    success: function (data) {
+                    //        if (data) {
+                    $.submitForm({
+                        url: "/IndexManage/PrimaryIndex/SetIndexStatus",
+                        param: { keyValue: keyValue, status: "I" },
+                        success: function (data) {
+                            $.currentWindow().$("#gridList").trigger("reloadGrid");
+                        }
+                    });
+                    //}
+                    //}
+                    //});
+                }
+            });
+        } else {
+            $.modalMsg("您没有选择任何项！", "warning");
+        }
+    }
+
+    //激活
+    function btn_enabled() {
+
+        var keyValue = $("#gridList").jqGridSelectNameValue("PERSON_SBR_ID");
+        $.modalConfirm("注：您确定要【激活】所选项索引吗？", function (r) {
+            if (r) {
+                $.submitForm({
+                    url: "/IndexManage/PrimaryIndex/SetIndexStatus",
+                    param: { keyValue: keyValue, status: "A" },
+                    success: function () {
+                        $.currentWindow().$("#gridList").trigger("reloadGrid");
+                    }
+                })
+            }
+        });
+    }
+
+    function btn_enabled_single() {
+
+        var keyValue = $("#gridList").jqGridSelectNameValue("PERSON_SBR_ID");
+        if ($.oneRowOnly(keyValue)) {
+            $.modalConfirm("注：您确定要【激活】所选项索引吗？", function (r) {
+                if (r) {
+                    $.submitForm({
+                        url: "/IndexManage/PrimaryIndex/SetIndexStatus_Single",
+                        param: { keyValue: keyValue },
+                        success: function () {
+                            $.currentWindow().$("#gridList").trigger("reloadGrid");
+                        }
+                    })
+                }
+            });
+        }
+    }
+
+    //主索引对比
+    function btn_compare() {
+        var keyValue = $("#gridList").jqGridSelectNameValue("PERSON_SBR_ID");
+        if (keyValue.indexOf(',') > 0) {
+            $.nfinetab.addTabSingle("IndexCompare", "/IndexManage/PrimaryIndex/Compare?keyValue=" + keyValue, "主索引对比");
+        } else {
+            $.modalMsg("请至少选择2项！", "warning");
+        }
+    }
+
+    //修改
+    function btn_edit() {
+        var keyValue = $("#gridList").jqGridSelectNameValue("PERSON_SBR_ID");
+        var status = $("#gridList").jqGridSelectNameValue("STATUS");
+
+        if ($.oneRowOnly(keyValue)) {
+            if (status.indexOf(">已激活<") >= 0) {
+                $.modalOpen({
+                    id: "Details",
+                    title: "索引明细",
+                    url: "/IndexManage/PrimaryIndex/Form?keyValue=" + keyValue,
+                    width: "700px",
+                    height: "550px",
+                    callBack: function (iframeId) {
+                        top.frames[iframeId].submitForm();
+                    }
+                });
+            } else {
+                $.modalMsg("只能修改已激活主索引", "warning");
+            }
+        }
+    }
+</script>
+<div class="topPanel">
+    <div class="toolbar">
+        <div class="btn-group">
+            <a id="NF-add" class="btn btn-primary dropdown-text" onclick="btn_add()"><i class="fa fa-plus"></i>新增</a>
+        </div>
+        <div class="btn-group">
+            <a id="btn-supsearch" class="btn btn-primary dropdown-text"><i class="fa fa-search"></i>&nbsp;高级检索&nbsp;</a>
+        </div>
+        <div class="btn-group">
+            <a class="btn btn-primary" onclick="$.reload()"><span class="glyphicon glyphicon-refresh"></span></a>
+        </div>
+        <div class="operate">
+            <ul class="nav nav-pills">
+                @*<li class="first">已选中<span>1</span>项</li>*@
+                <li><a id="btn-compare" onclick="btn_compare()"><i class="fa fa-files-o"></i>对比</a></li>
+                <li><a id="btn-details" onclick="btn_details()"><i class="fa fa-search-plus"></i>明细</a></li>
+                <li><a id="btn-info" onclick="btn_info()"><i class="fa fa-bullseye"></i>查看</a></li>
+                <li class="split"></li>
+                <li><a id="btn-edit" onclick="btn_edit()"><i class="fa fa-pencil-square-o"></i>修改</a></li>
+                <li><a id="btn-enabled" onclick="btn_enabled_single()"><i class="fa fa-play-circle"></i>启用</a></li>
+                <li><a id="btn-disabled" onclick="btn_disabled()"><i class="fa fa-stop-circle"></i>停用</a></li>
+            </ul>
+            <a href="javascript:;" class="close"></a>
+        </div>
+    </div>
+    <div class="search">
+        <table>
+            <tr>
+                <td>状态：<select id="status" style="height: 28px; border-color: #ccc; border-radius: 4px;" onchange="$('#btn_search').click();">
+                    <option value="A">已激活</option>
+                    <option value="">全部</option>
+                    <option value="I">已停用</option>
+                </select>&nbsp;
+                </td>
+                <td>
+                    <div class="input-group">
+                        @*<input id="Start_Birthday" style="width: 100px; border-right: none;" placeholder="生日起始日期" type="text" class="form-control input-wdatepicker" onfocus="WdatePicker()" />
+                        <input id="End_Birthday" style="width: 100px; border-right: none;" placeholder="生日截止日期" type="text" class="form-control input-wdatepicker" onfocus="WdatePicker()" />*@
+                        <input id="txt_keyword" type="text" class="form-control" placeholder="姓名/身份证号" style="width: 200px;">
+                        <span class="input-group-btn">
+                            <button id="btn_search" type="button" class="btn  btn-primary"><i class="fa fa-search"></i></button>
+                        </span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div class="panel panel-primary" id="sup-searchPanel" style="position: absolute; z-index: 999999; right: 5px; top: 50px; width: 1000px; height: 460px; display: none;">
+        <div class="panel-heading">高级检索</div>
+        <div class="panel-body">
+            <form id="form1">
+                <table class="form">
+                    <tr>
+                        <th class="formTitle">姓名</th>
+                        <td class="formValue">
+                            <input id="NAME" name="NAME" type="text" class="form-control" />
+                        </td>
+                        <th class="formTitle">性别</th>
+                        <td class="formValue">
+                            <select id="GENDER_NAME" name="GENDER_NAME" class="form-control">
+                            </select>
+                        </td>
+
+                        <th class="formTitle">婚姻状况</th>
+                        <td class="formValue">
+                            <select id="MARITAL_STATUS_CODE" name="MARITAL_STATUS_CODE" style="z-index: 99999;" class="form-control">
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="formTitle">民族</th>
+                        <td class="formValue">
+                            <select id="ETHNIC_GROUP_NAME" name="ETHNIC_GROUP_NAME" class="form-control">
+                            </select>
+                        </td>
+                        <th class="formTitle">血型</th>
+                        <td class="formValue">
+                            <select id="ABO_BLOOD_TYPE_CODE" name="ABO_BLOOD_TYPE_CODE" class="form-control">
+                            </select>
+                        </td>
+
+                        <th class="formTitle">工作单位</th>
+                        <td class="formValue">
+                            <input id="EMPLOYER_NAME" name="EMPLOYER_NAME" type="text" class="form-control" />
+                        </td>
+
+                        <th class="formTitle">家庭地址</th>
+                        <td class="formValue">
+                            <input id="PRESENT_ADDRESS" name="PRESENT_ADDRESS" type="text" class="form-control" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="formTitle">联系电话</th>
+                        <td class="formValue">
+                            <input id="CONTACT_PHONE_NO" name="CONTACT_PHONE_NO" type="text" class="form-control" />
+                        </td>
+                        <th class="formTitle">身份证号</th>
+                        <td class="formValue">
+                            <input id="ID_NO" name="ID_NO" type="text" class="form-control" />
+                        </td>
+                        <th class="formTitle">患者主索引号</th>
+                        <td class="formValue">
+                            <input id="EMPI_ID" name="EMPI_ID" type="text" class="form-control" />
+                        </td>
+                        <th class="formTitle">主键</th>
+                        <td class="formValue">
+                            <input id="" name="PERSON_SBR_ID" type="text" class="form-control" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="formTitle">门诊号</th>
+                        <td class="formValue">
+                            <input id="OP_MEDICAL_RECORD_NO" name="OP_MEDICAL_RECORD_NO" type="text" class="form-control" />
+                        </td>
+                        <th class="formTitle" style="padding-top: 5px;">就诊卡号
+                        </th>
+                        <td class="formValue">
+                            <input id="HEALTH_CARD_NO" name="F_Description" class="form-control" />
+                        </td>
+                        <th class="formTitle" style="padding-top: 5px;">病案号
+                        </th>
+                        <td class="formValue">
+                            <input id="MEDICAL_RECORD_NO" name="F_Description" class="form-control" type="text" />
+                        </td>
+
+                        <th class="formTitle" style="padding-top: 5px;">体检号
+                        </th>
+                        <td class="formValue">
+                            <input id="F_Description" name="F_Description" class="form-control" type="text" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="formTitle">医保卡号</th>
+                        <td class="formValue">
+                            <input id="MEDICAL_INSURANCE_TYPE_CODE" name="MEDICAL_INSURANCE_TYPE_CODE" type="text" class="form-control" />
+                        </td>
+                        @*<th class="formTitle">京医通卡号</th>
+                        <td class="formValue">
+                            <input id="BEIJING_MEDICAL_CARD_NO" name="BEIJING_MEDICAL_CARD_NO" type="text" class="form-control" />
+                        </td>*@
+                        <th class="formTitle">出生日期范围</th>
+                        <td class="formValue" colspan="3">
+                            <input id="Start_DOB" style="width: 100px; float: left; margin-top: 15px;" type="text" class="form-control input-wdatepicker" onfocus="WdatePicker()" />
+                            <span style="float: left; margin-top: 5px;">&nbsp;至&nbsp;</span>
+                            <input id="End_DOB" style="width: 100px; float: left; margin-top: 15px;" type="text" class="form-control input-wdatepicker" onfocus="WdatePicker()" />
+                        </td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+        <div class="panel-footer">
+            <div class="btn-group" style="margin-right: 10px;">
+                <button type="button" class="btn btn-primary" id="supsearch">确定</button>
+            </div>
+
+            <div class="btn-group" style="margin-right: 10px;">
+                <button type="button" class="btn btn-danger" onclick=" $('#sup-searchPanel').hide();">关闭</button>
+            </div>
+
+            <div class="btn-group" style="margin-right: 10px;">
+                <button type="button" class="btn btn-default" onclick="$('form input').val('');$('form select').val('').trigger('change');">重置</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="gridPanel">
+
+    <table id="gridList"></table>
+    <div id="gridPager"></div>
+</div>

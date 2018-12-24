@@ -1,0 +1,794 @@
+﻿@{
+    ViewBag.Title = "Details";
+    Layout = "~/Views/Shared/_Form.cshtml";
+}
+<script>
+
+    var keyValue = $.request("keyValue");
+
+    $(function () {
+        initControl();
+        InitForm();
+    });
+
+
+
+    //加载数据
+    function InitForm() {
+
+        if (!!keyValue) {
+
+            $.ajax({
+                url: "/IndexManage/PrimaryIndex/GetDetailsJson",
+                data: { keyValue: keyValue },
+                dataType: "json",
+                async: false,
+                success: function (data) {
+
+                    //console.log(data);
+                    //主索引
+                    $("#form1").formSerialize(data["person"]);
+                    //系统映射
+                    var strHtml = "";
+                    if (data.mapping.length > 0) {
+                        strHtml = "<tr><td>机构代码</td><td>系统编码</td><td>系统唯一ID</td></tr>";
+                        for (var i = 0; i < data.mapping.length; i++) {
+                            strHtml += "<tr><td>" + data.mapping[i].ORG_CODE + "</td><td>" + data.mapping[i].SYS_CODE + "</td><td>" + data.mapping[i].SYS_REC_ID + "</td></tr>"
+                        }
+                        $("#mapping").html(strHtml);
+                    }
+
+                    //操作日志
+                    if (data.operation.length > 0) {
+                        strHtml = "";
+                        var typeName = "";
+                        for (var i = 0; i < data.operation.length; i++) {
+                            switch (data.operation[i].OPERATION_TYPE) {
+                                case "ADD":
+                                    typeName = "新增";
+                                    break;
+                                case "UPDATE":
+                                    typeName = "修改";
+                                    break;
+                                case "MERGE":
+                                    typeName = "合并";
+                                    break;
+                                case "SPLIT":
+                                    typeName = "拆分";
+                                    break;
+                                case "POTENTIAL_DUPLICATE":
+                                    typeName = "潜在重复";
+                                    break;
+                                case "ACTIVE":
+                                    typeName = "启用";
+                                    break;
+                                case "DISABLE":
+                                    typeName = "停用";
+                                    break;
+                                default:
+                                    typeName = "未定义";
+                                    break;
+
+                            }
+                            var sys_name = "未知系统";
+                            if (data.operation[i].SYS_REC_LIST != null && data.operation[i].SYS_REC_LIST.length > 0) {
+                                if (data.operation[i].SYS_REC_LIST.length == 1) {
+                                    sys_name = data.operation[i].SYS_REC_LIST[0][2].Value;
+                                } else {
+                                    sys_name = data.operation[i].SYS_REC_LIST[0][2].Value + ',' + data.operation[i].SYS_REC_LIST[1][2].Value;
+                                }
+                            }
+                            strHtml += "<p>【" + data.operation[i].OPERATE_TIME + "】" + typeName + "-" + sys_name + "</p>";
+                        }
+                        $("#change").html(strHtml);
+                    } else {
+                        $("#btn_changeDetail").hide();
+                    }
+
+                    $('input,select,#btn_submit').attr("disabled", "disabled");
+                }
+            });
+        }
+
+        //初始化面板高度
+        Init();
+    }
+
+
+    //保存
+    function btn_submit() {
+
+        if (!$('#form1').formValid()) {
+            return false;
+        }
+
+        $.submitForm({
+            url: "/IndexManage/PrimaryIndex/SubmitForm?keyValue=" + keyValue,
+            param: $("#form1").formSerialize(),
+            success: function (data) {
+                if (data.state == "success") {
+                    InitForm();
+                }
+            }
+        });
+    }
+
+    //初始化面板高度
+    function Init() {
+        var height = 0;
+        var winHeight = $(window).height();
+        $(".panel").each(function (index, element) {
+            height = $(element).height();
+            if (height > winHeight) {
+                $(element).css("height", winHeight - 20);
+            }
+        });
+    }
+
+    //启用编辑
+    function btn_enableEdit() {
+        $('input,select').removeAttr('disabled');
+        $("#btn_submit").removeAttr('disabled');
+        $("#NAME").focus();
+    }
+
+    //变动明细
+    function btn_changedetails() {
+        $.nfinetab.addTabSingle("ChangeDetails", "/IndexManage/PrimaryIndex/ChangeDetails?keyValue=" + keyValue, "变动明细");
+    }
+
+    //初始化下拉框
+    function initControl() {
+
+        $("#CATEGORY_CODE").change(function () {
+            $("#CATEGORY_NAME").val($(this).find('option:selected').text());
+        });
+
+        $("#GENDER_NAME").bindSelect({
+            defaultText: "==请选择性别==",
+            id: "name",
+            text: "name",
+            data: top.clients.gender,
+            change: function (e) {
+                if (e != undefined)
+                    $("#GENDER_CODE").val(e.code);
+            }
+        });
+
+        $("#ABO_BLOOD_TYPE_NAME").bindSelect({
+            defaultText: "==请选择ABO血型==",
+            id: "name",
+            text: "name",
+            data: top.clients.abo_blood_type,
+            change: function (e) {
+                if (e != undefined) {
+
+                    $("#ABO_BLOOD_TYPE_CODE").val(e.code);
+                }
+            }
+        });
+
+        $("#RH_BLOOD_TYPE_NAME").bindSelect({
+            defaultText: "==请选择Rh血型==",
+            id: "name",
+            text: "name",
+            data: top.clients.rh_blood_type,
+            change: function (e) {
+                if (e != undefined) {
+                    $("#RH_BLOOD_TYPE_CODE").val(e.code);
+                }
+            }
+        });
+
+        $("#CITIZENSHIP_NAME").bindSelect({
+            defaultText: "==请选择国籍==",
+            id: "name",
+            text: "name",
+            data: top.clients.country,
+            search: true,
+            change: function (e) {
+                if (e != undefined)
+                    $("#CITIZENSHIP_CODE").val(e.code);
+            }
+        });
+        $("#ETHNIC_GROUP_NAME").bindSelect({
+            defaultText: "==请选择民族==",
+            id: "name",
+            text: "name",
+            data: top.clients.nation,
+            search: true,
+            change: function (e) {
+                if (e != undefined)
+                    $("#ETHNIC_GROUP_CODE").val(e.code);
+            }
+        });
+
+        $("#ID_TYPE_NAME").bindSelect({
+            defaultText: "==请选证件类别==",
+            id: "name",
+            text: "name",
+            data: top.clients.idtype,
+            search: true
+        });
+
+        $("#EDUCATION_LEVEL_NAME").bindSelect({
+            defaultText: "==请选择文化程度==",
+            id: "name",
+            text: "name",
+            data: top.clients.degree,
+            search: true,
+            change: function (e) {
+                if (e != undefined)
+                    $("#EDUCATION_LEVEL_CODE").val(e.code);
+            }
+        });
+
+
+        $("#OCCUPATION_NAME").bindSelect({
+            defaultText: "==请选择职业类别==",
+            id: "name",
+            text: "name",
+            data: top.clients.occupation,
+            search: true,
+            change: function (e) {
+                if (e != undefined) {
+                    $("#OCCUPATION_CODE").val(e.code);
+                }
+            }
+        });
+
+        //出生地地址【省市县】级联
+        $("#POB_PROVINCE").bindSelect({
+            defaultText: "==请选择出生地 - 省==",
+            id: "ProName",
+            text: "ProName",
+            data: top.clients.address[0].provinceList,
+            search: true,
+            change: function (e) {//省份选择，刷新对应的城市
+                var arr = [];
+                $("#POB_CITY").html("");
+                $("#POB_COUNTY").html("");
+                $("#POB_COUNTY").html("").val("").trigger("change");
+                if (e == undefined) {
+                    arr = [];
+                } else {
+                    //选中的省份ID
+                    var proID = e.ProID;
+                    var _cityList = top.clients.address[1].city_county_List;
+                    for (var i = 0; i < _cityList.length; i++) {
+                        if (Number(_cityList[i].ProviceID) == Number(proID)) {
+                            arr.push(_cityList[i]);
+                        }
+                    }
+                }
+
+                $("#POB_CITY").bindSelect({
+                    defaultText: "==请选择出生地 - 市 ==",
+                    id: "name",
+                    text: "name",
+                    data: arr,
+                    search: true
+                });
+
+                $("#POB_COUNTY").bindSelect({
+                    defaultText: "==请选择出生地 - 县 ==",
+                    id: "name",
+                    text: "name",
+                    data: arr,
+                    search: true
+                });
+            }
+        });
+
+
+        //籍贯 【省市级联】
+        $("#NATIVE_PLACE_PROVINCE").bindSelect({
+            defaultText: "==请选择出籍贯 - 省==",
+            id: "ProName",
+            text: "ProName",
+            data: top.clients.address[0].provinceList,
+            search: true,
+            change: function (e) {//省份选择，刷新对应的城市
+                var arr = [];
+                $("#NATIVE_PLACE_CITY").html("");
+                if (e == undefined) {
+                    arr = [];
+                } else {
+                    //选中的省份ID
+                    var proID = e.ProID;
+                    var _cityList = top.clients.address[1].city_county_List;
+                    for (var i = 0; i < _cityList.length; i++) {
+                        if (Number(_cityList[i].ProviceID) == Number(proID)) {
+                            arr.push(_cityList[i]);
+                        }
+                    }
+                }
+
+                $("#NATIVE_PLACE_CITY").bindSelect({
+                    defaultText: "==请选择籍贯 - 市 ==",
+                    id: "name",
+                    text: "name",
+                    data: arr,
+                    search: true
+                });
+            }
+        });
+
+        //现居住地址【省市县】级联
+        $("#PRESENT_ADDRESS_PROVINCE").bindSelect({
+            defaultText: "==请选择居住地址 - 省==",
+            id: "ProName",
+            text: "ProName",
+            data: top.clients.address[0].provinceList,
+            search: true,
+            change: function (e) {//省份选择，刷新对应的城市
+                var arr = [];
+                $("#PRESENT_ADDRESS_CITY").html("");
+                $("#PRESENT_ADDRESS_COUNTY").html("").val("").trigger("change");
+                if (e == undefined) {
+                    arr = [];
+                } else {
+                    //选中的省份ID
+                    var proID = e.ProID;
+                    var _cityList = top.clients.address[1].city_county_List;
+                    for (var i = 0; i < _cityList.length; i++) {
+                        if (Number(_cityList[i].ProviceID) == Number(proID)) {
+                            arr.push(_cityList[i]);
+                        }
+                    }
+                }
+
+                $("#PRESENT_ADDRESS_CITY").bindSelect({
+                    defaultText: "==请选择居住地 - 市 ==",
+                    id: "name",
+                    text: "name",
+                    data: arr,
+                    search: true
+                });
+
+                $("#PRESENT_ADDRESS_COUNTY").html("");
+                $("#PRESENT_ADDRESS_COUNTY").bindSelect({
+                    defaultText: "==请选择居住地 - 县 ==",
+                    id: "name",
+                    text: "name",
+                    data: arr,
+                    search: true
+                });
+            }
+        });
+
+        //工作地址【省市县】级联
+        $("#EMPLOYER_PROVINCE").bindSelect({
+            defaultText: "==请选择工作单位 - 省==",
+            id: "ProName",
+            text: "ProName",
+            data: top.clients.address[0].provinceList,
+            search: true,
+            change: function (e) {//省份选择，刷新对应的城市
+                var arr = [];
+                $("#EMPLOYER_CITY").html("");
+                $("#EMPLOYER_COUNTY").html("").val("").trigger("change");
+                if (e == undefined) {
+                    arr = [];
+                } else {
+                    //选中的省份ID
+                    var proID = e.ProID;
+                    var _cityList = top.clients.address[1].city_county_List;
+                    for (var i = 0; i < _cityList.length; i++) {
+                        if (Number(_cityList[i].ProviceID) == Number(proID)) {
+                            arr.push(_cityList[i]);
+                        }
+                    }
+                }
+
+                $("#EMPLOYER_CITY").bindSelect({
+                    defaultText: "==请选择工作单位 - 市 ==",
+                    id: "name",
+                    text: "name",
+                    data: arr,
+                    search: true
+                });
+
+                $("#EMPLOYER_COUNTY").html("");
+                $("#EMPLOYER_COUNTY").bindSelect({
+                    defaultText: "==请选择工作单位 - 县 ==",
+                    id: "name",
+                    text: "name",
+                    data: arr,
+                    search: true
+                });
+            }
+        });
+
+        $("#MARITAL_STATUS_NAME").bindSelect({
+            defaultText: "==请选择婚姻状况==",
+            id: "name",
+            text: "name",
+            data: top.clients.marriage,
+            change: function (e) {
+                if (e != undefined) {
+                    $("#MARITAL_STATUS_CODE").val(e.code);
+                }
+            }
+        });
+    }
+</script>
+
+<div class="container" style="margin: 0 0 0 0;">
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="panel panel-default" id="IndexInfo">
+                <div class="panel-heading">主索引信息<i style="float: right; cursor: pointer;" title="启用编辑" class="fa fa-pencil" aria-hidden="true" onclick="btn_enableEdit()"></i></div>
+                <div class="panel-body" style="height: 87%; overflow-y: scroll;">
+                    <form id="form1">@*=====【注意Form元素的name属性必须与id一致】=====*@
+                        <table class="form">
+                            <tr>
+                                <th class="formTitle">姓名</th>
+                                <td class="formValue">
+                                    <input id="NAME" name="NAME" type="text" class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">人员分类</th>
+                                <td class="formValue">
+                                    <input id="CATEGORY_NAME" name="CATEGORY_NAME" type="hidden" />
+                                    <select id="CATEGORY_CODE" name="CATEGORY_CODE" class="form-control">
+                                        <option value="">==请选择人员分类==</option>
+                                        <option value="0">患者</option>
+                                        <option value="1">医生</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">身份证件号码</th>
+                                <td class="formValue">
+                                    <input id="ID_NO" name="ID_NO" class="form-control" type="text" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">性别</th>
+                                <td class="formValue">
+                                    <input id="GENDER_CODE" name="GENDER_CODE" type="hidden" />
+                                    <select id="GENDER_NAME" name="GENDER_NAME" class="form-control">
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">病案号</th>
+                                <td class="formValue">
+                                    <input id="MEDICAL_RECORD_NO" name="MEDICAL_RECORD_NO" class="form-control" type="text" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">居民健康卡号</th>
+                                <td class="formValue">
+                                    <input id="HEALTH_CARD_NO" name="HEALTH_CARD_NO" class="form-control" type="text" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">本人电话号码</th>
+                                <td class="formValue">
+                                    <input id="PHONE_NO" name="PHONE_NO" type="text" class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">出生日期</th>
+                                <td class="formValue">
+                                    <input id="DOB" name="DOB" type="text" class="form-control input-wdatepicker" onfocus="WdatePicker()" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">身份证件类别名称</th>
+                                <td class="formValue">
+                                    <select id="ID_TYPE_NAME" name="ID_TYPE_NAME" class="form-control"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">身份证件类别代码</th>
+                                <td class="formValue">
+                                    <input id="ID_TYPE_CODE" name="ID_TYPE_CODE" type="text" class="form-control" />
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th class="formTitle">医疗保险类别代码</th>
+                                <td class="formValue">
+                                    <input id="MEDICAL_INSURANCE_TYPE_CODE" name="MEDICAL_INSURANCE_TYPE_CODE" type="text" class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">医疗保险类别名称</th>
+                                <td class="formValue">
+                                    <input id="MEDICAL_INSURANCE_TYPE_NAME" name="MEDICAL_INSURANCE_TYPE_NAME" type="text" class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">医保卡号</th>
+                                <td class="formValue">
+                                    <input id="MEDICAL_INSURANCE_CARD_NO" name="MEDICAL_INSURANCE_CARD_NO" class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">就诊卡号</th>
+                                <td class="formValue">
+                                    <input id="HOSPITAL_CARD_NO" name="HOSPITAL_CARD_NO" class="form-control" type="text" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">门诊病案号
+                                </th>
+                                <td class="formValue">
+                                    <input id="OP_MEDICAL_RECORD_NO" name="OP_MEDICAL_RECORD_NO" class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">京易通卡号
+                                </th>
+                                <td class="formValue">
+                                    <input id="BEIJING_MEDICAL_CARD_NO" name="BEIJING_MEDICAL_CARD_NO" class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">ABO血型名称
+                                </th>
+                                <td class="formValue">
+                                    <input id="ABO_BLOOD_TYPE_CODE" name="ABO_BLOOD_TYPE_CODE" type="hidden" />
+                                    <select id="ABO_BLOOD_TYPE_NAME" name="ABO_BLOOD_TYPE_NAME" class="form-control"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">Rh血型名称
+                                </th>
+                                <td class="formValue">
+                                    <input type="hidden" id="RH_BLOOD_TYPE_CODE" name="RH_BLOOD_TYPE_CODE" />
+                                    <select id="RH_BLOOD_TYPE_NAME" name="RH_BLOOD_TYPE_NAME" class="form-control"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">国籍</th>
+                                <td class="formValue">
+                                    <input id="CITIZENSHIP_CODE" name="CITIZENSHIP_CODE" type="hidden" />
+                                    <select id="CITIZENSHIP_NAME" name="CITIZENSHIP_NAME" class="form-control"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">民族</th>
+                                <td class="formValue">
+                                    <input id="ETHNIC_GROUP_CODE" name="ETHNIC_GROUP_CODE" type="hidden" />
+                                    <select id="ETHNIC_GROUP_NAME" name="ETHNIC_GROUP_NAME" class="form-control"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">职业类别</th>
+                                <td class="formValue">
+                                    <input type="hidden" id="OCCUPATION_CODE" name="OCCUPATION_CODE" />
+                                    <select id="OCCUPATION_NAME" name="OCCUPATION_NAME" class="form-control"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">文化程度</th>
+                                <td class="formValue">
+                                    <input id="EDUCATION_LEVEL_CODE" name="EDUCATION_LEVEL_CODE" type="hidden" />
+                                    <select id="EDUCATION_LEVEL_NAME" name="EDUCATION_LEVEL_NAME" class="form-control"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">出生地-省</th>
+                                <td class="formValue">
+                                    <select id="POB_PROVINCE" name="POB_PROVINCE" class="form-control"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">出生地-市</th>
+                                <td class="formValue">
+                                    <select id="POB_CITY" name="POB_CITY" class="form-control"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">出生地-县</th>
+                                <td class="formValue">
+                                    <select id="POB_COUNTY" name="POB_COUNTY" type="text" class="form-control"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">籍贯-省</th>
+                                <td class="formValue">
+                                    <select id="NATIVE_PLACE_PROVINCE" name="NATIVE_PLACE_PROVINCE" class="form-control"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">籍贯-市</th>
+                                <td class="formValue">
+                                    <select id="NATIVE_PLACE_CITY" name="NATIVE_PLACE_CITY" class="form-control"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">现住址-省</th>
+                                <td class="formValue">
+                                    <select id="PRESENT_ADDRESS_PROVINCE" name="PRESENT_ADDRESS_PROVINCE" class="form-control"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">现住址-市</th>
+                                <td class="formValue">
+                                    <select id="PRESENT_ADDRESS_CITY" name="PRESENT_ADDRESS_CITY" class="form-control"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">现住址-县</th>
+                                <td class="formValue">
+                                    <select id="PRESENT_ADDRESS_COUNTY" name="PRESENT_ADDRESS_COUNTY" class="form-control"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">现住址-乡</th>
+                                <td class="formValue">
+                                    <input id="PRESENT_ADDRES_COUNTRY" name="PRESENT_ADDRES_COUNTRY" class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">现住址-村</th>
+                                <td class="formValue">
+                                    <input id="PRESENT_ADDRES_VILLAGE" name="PRESENT_ADDRES_VILLAGE" class="form-control" type="text" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">现住址-门牌号码
+                                </th>
+                                <td class="formValue">
+                                    <input id="PRESENT_ADDRES_HOUSE_NO" name="PRESENT_ADDRES_HOUSE_NO" class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">现住址-邮编
+                                </th>
+                                <td class="formValue">
+                                    <input id="PRESENT_ADDRES_POSTAL_CODE" name="PRESENT_ADDRES_POSTAL_CODE" class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle" style="width: 100px;">工作单位名称</th>
+                                <td class="formValue">
+                                    <input id="EMPLOYER_NAME" name="EMPLOYER_NAME" type="text" class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle" style="width: 100px;">工作单位-省</th>
+                                <td class="formValue">
+                                    <select id="EMPLOYER_PROVINCE" name="EMPLOYER_PROVINCE" class="form-control"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">工作单位-市</th>
+                                <td class="formValue">
+                                    <select id="EMPLOYER_CITY" name="EMPLOYER_CITY" class="form-control"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">工作单位-县</th>
+                                <td class="formValue">
+                                    <select id="EMPLOYER_COUNTY" name="EMPLOYER_COUNTY" class="form-control"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">工作单位电话号码</th>
+                                <td class="formValue">
+                                    <input id="EMPLOYER_PHONE_NO" name="EMPLOYER_PHONE_NO" class="form-control" type="text" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">工作单位-邮编</th>
+                                <td class="formValue">
+                                    <input id="EMPLOYER_POSTAL_CODE" name="EMPLOYER_POSTAL_CODE" class="form-control" type="text" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">联系人姓名</th>
+                                <td class="formValue">
+                                    <input id="CONTACT_NAME" name="CONTACT_NAME" type="text" class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">联系人地址</th>
+                                <td class="formValue">
+                                    <input id="CONTACT_ADDRESS" name="CONTACT_ADDRESS" type="text" class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">联系人同本人关系代码</th>
+                                <td class="formValue">
+                                    <input id="CONTACT_RELATIONSHIP_CODE" name="CONTACT_RELATIONSHIP_CODE" type="text" class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">联系人同本人关系名称</th>
+                                <td class="formValue">
+                                    <input id="CONTACT_RELATIONSHIP_NAME" name="CONTACT_RELATIONSHIP_NAME" type="text" class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">联系人电话号码</th>
+                                <td class="formValue">
+                                    <input id="CONTACT_PHONE_NO" name="CONTACT_PHONE_NO" type="text" class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">VIP标识</th>
+                                <td class="formValue">
+                                    <select id="VIP_INDICATOR" name="VIP_INDICATOR" type="text" class="form-control">
+                                        <option value="">==请选择==</option>
+                                        <option value="0">非VIP</option>
+                                        <option value="1">VIP</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">死亡标识</th>
+                                <td class="formValue">
+                                    <select id="DEATH_INDICATOR" name="DEATH_INDICATOR" class="form-control">
+                                        <option value="">==请选择==</option>
+                                        <option value="0">存活</option>
+                                        <option value="1">死亡</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">死亡日期</th>
+                                <td class="formValue">
+                                    <input id="DOD" name="DOD" class="form-control" type="text" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">记录状态
+                                </th>
+                                <td class="formValue">
+                                    <select id="STATUS" name="STATUS" class="form-control">
+                                        <option value="A">启用</option>
+                                        <option value="I">停用</option>
+                                        <option value="M">已合并</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="formTitle">婚姻状况
+                                </th>
+                                <td class="formValue">
+                                    <input id="MARITAL_STATUS_CODE" name="MARITAL_STATUS_CODE" type="hidden" />
+                                    <select id="MARITAL_STATUS_NAME" name="MARITAL_STATUS_NAME" class="form-control"></select>
+                                </td>
+                            </tr>
+                        </table>
+                    </form>
+                </div>
+                <div class="panel-footer">
+                    <button type="button" class="btn btn-primary" id="btn_submit" onclick="btn_submit()" disabled>保存</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">应用系统患者基本信息映射关系</div>
+                <div class="panel-body" style="height: 87%; overflow-y: scroll;">
+                    <table class="table table-hover" id="mapping">
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="panel panel-default">
+                <div class="panel-heading">主索引变动记录</div>
+                <div class="panel-body" style="height: 87%; overflow-y: scroll;">
+                    <div class="alert alert-default" role="alert" id="change">
+                        @* <p>【2017-12-01】1001 ADD </p>
+                        <p>【2017-12-01】1001 ADD </p>
+                        <p>【2017-12-01】1001 ADD </p>
+                        <p>【2017-12-01】1001 ADD </p>*@
+                    </div>
+                </div>
+                <div class="panel-footer">
+                    <button type="button" class="btn btn-default" id="btn_changeDetail" onclick="btn_changedetails()">更多 >></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

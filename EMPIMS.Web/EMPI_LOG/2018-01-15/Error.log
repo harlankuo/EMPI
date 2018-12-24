@@ -1,0 +1,18 @@
+2018-01-15 10:58:45,216 - IndexSearchService - Unexpected character encountered while parsing value: S. Path 'respons.data', line 1, position 63.
+2018-01-15 11:02:11,180 - IndexSearchService - Unexpected character encountered while parsing value: S. Path 'respons.data', line 1, position 63.
+2018-01-15 12:00:04,387 - IndexSearchService - 输入字符串的格式不正确。
+2018-01-15 19:02:38,683 - EMPIMS.Web.Areas.IndexManage.Controllers.PrimaryIndexController - 指定的转换无效。
+2018-01-15 19:03:07,917 - EMPIMS.Web.Areas.IndexManage.Controllers.PrimaryIndexController - 指定的转换无效。
+2018-01-15 19:04:53,012 - EMPIMS.Web.Areas.IndexManage.Controllers.PrimaryIndexController - 指定的转换无效。
+2018-01-15 19:07:21,578 - EMPIMS.Web.Areas.IndexManage.Controllers.PrimaryIndexController - 指定的转换无效。
+2018-01-15 19:09:11,622 - EMPIMS.Web.Areas.IndexManage.Controllers.PrimaryIndexController - 指定的转换无效。
+2018-01-15 19:09:11,968 - EMPIMS.Web.Areas.IndexManage.Controllers.PrimaryIndexController - 指定的转换无效。
+2018-01-15 19:09:49,405 - EMPIMS.Web.Areas.IndexManage.Controllers.PrimaryIndexController - 指定的转换无效。
+2018-01-15 19:14:42,101 - EMPIMS.Web.Areas.IndexManage.Controllers.PrimaryIndexController - 指定的转换无效。
+2018-01-15 19:15:07,648 - EMPIMS.Web.Areas.IndexManage.Controllers.PrimaryIndexController - 指定的转换无效。
+2018-01-15 19:15:19,934 - EMPIMS.Web.Areas.IndexManage.Controllers.PrimaryIndexController - 指定的转换无效。
+2018-01-15 19:17:27,005 - EMPIMS.Web.Areas.IndexManage.Controllers.PrimaryIndexController - 指定的转换无效。
+2018-01-15 19:23:16,972 - EMPIMS.Web.Areas.IndexManage.Controllers.PrimaryIndexController - 指定的转换无效。
+2018-01-15 19:24:28,028 - EMPIMS.Web.Areas.IndexManage.Controllers.PrimaryIndexController - 指定的转换无效。
+2018-01-15 19:24:47,033 - EMPIMS.Web.Areas.IndexManage.Controllers.PrimaryIndexController - 指定的转换无效。
+2018-01-15 19:48:55,694 - EMPIMS.Web.Areas.IndexManage.Controllers.PrimaryIndexController - 指定的转换无效。

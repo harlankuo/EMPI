@@ -1,0 +1,162 @@
+﻿@{
+    ViewBag.Title = @System.Configuration.ConfigurationManager.AppSettings["SoftName"].ToString();
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewBag.Title</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="~/Content/css/framework-font.css" rel="stylesheet" />
+    <link href="~/Content/css/framework-login.css" rel="stylesheet" />
+    <script src="~/Content/js/jquery/jquery-2.1.1.min.js"></script>
+    <script src="~/Content/js/cookie/jquery.cookie.js"></script>
+    <script src="~/Content/js/md5/jquery.md5.js"></script>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="container">
+            <div class="logo">
+                <i class="fa fa-medkit"></i>
+                <h1>@EMPIMS.Code.Configs.GetValue("SoftName").ToString()</h1>
+            </div>
+            <form class="form">
+                <div class="row">
+                    <h2 style="margin-left: 40%;">用户登录</h2>
+                    <br />
+                </div>
+                <div class="row">
+                    <input id="txt_account" type="text" placeholder="用户名" value="admin" />
+                    <i class="fa fa-user"></i>
+                </div>
+                <div class="row">
+                    <i class="fa fa-key"></i>
+                    <input id="txt_password" type="password" class="form-control" placeholder="密码" value="123" />
+                </div>
+                <div class="row">
+                    <button id="login_button" type="button"><span>登录</span></button>
+                </div>
+            </form>
+            <div class="login_tips"></div>
+        </div>
+    </div>
+    <script type="text/javascript">
+
+        (function ($) {
+
+            $.login = {
+                formMessage: function (msg) {
+                    $('.login_tips').find('.tips_msg').remove();
+                    $('.login_tips').append('<div class="tips_msg"><i class="fa fa-question-circle"></i>' + msg + '</div>');
+                },
+                loginClick: function () {
+
+                    var $sysMgmt_url = '@System.Configuration.ConfigurationManager.AppSettings["SysMgmt"].ToString()';
+
+                    var $username = $("#txt_account");
+                    var $password = $("#txt_password");
+                    var $code = $("#txt_code");
+                    if ($username.val() == "") {
+                        $username.focus();
+                        $.login.formMessage('请输入用户名。');
+                        return false;
+                    } else if ($password.val() == "") {
+                        $password.focus();
+                        $.login.formMessage('请输入登录密码。');
+                        return false;
+                    }
+                    else {
+                        $("#login_button").attr('disabled', 'disabled').find('span').html("loading...");
+                        $.ajax({
+                            url: $sysMgmt_url + 'Handle/UserHandler.ashx',
+                            data: {
+                                op: 'logon',
+                                username: $.trim($username.val()),
+                                password: $.trim($password.val()),
+                                funccode: '@System.Configuration.ConfigurationManager.AppSettings["SystemNumber"].ToString()',
+                                systemcode: "@System.Configuration.ConfigurationManager.AppSettings["SystemCode"].ToString()",
+                                pageCode: 'EMPIMS.Login', operationCode: '127'
+                            },
+                            type: "post",
+                            dataType: "json",
+                            success: function (data) {
+                                if (data.result == "success") {
+                                    localStorage.setItem('userPermission', data.userPermission);
+                                    SetCurrentUser(data.data);//设置该系统的Session信息
+                                } else {
+                                    $("#login_button").removeAttr('disabled').find('span').html("登录");
+                                    $.login.formMessage(data.data);
+                                }
+                            }, error: function (XMLHttpRequest, error, status) {
+                                $("#login_button").removeAttr('disabled').find('span').html("登录");
+                                $.login.formMessage("后台管理系统服务器异常。");
+                            }
+                        });
+                    }
+                },
+                init: function () {
+                    $('.wrapper').height($(window).height());
+                    $(".container").css("margin-top", ($(window).height() - $(".container").height()) / 2 - 50);
+                    $(window).resize(function (e) {
+                        $('.wrapper').height($(window).height());
+                        $(".container").css("margin-top", ($(window).height() - $(".container").height()) / 2 - 50);
+                    });
+                    var login_error = $.cookie('empims_login_error');
+                    if (login_error != null) {
+                        switch (login_error) {
+                            case "overdue":
+                                $.login.formMessage("系统登录已超时,请重新登录");
+                                break;
+                            case "OnLine":
+                                $.login.formMessage("您的帐号已在其它地方登录,请重新登录");
+                                break;
+                            case "-1":
+                                $.login.formMessage("系统未知错误,请重新登录");
+                                break;
+                        }
+                        $.cookie('empims_login_error', '', { path: "/", expires: -1 });
+                    }
+                    $("#login_button").click(function () {
+                        $.login.loginClick();
+                    });
+                    document.onkeydown = function (e) {
+                        if (!e) e = window.event;
+                        if ((e.keyCode || e.which) == 13) {
+                            document.getElementById("login_button").focus();
+                            document.getElementById("login_button").click();
+                        }
+                    }
+                }
+            };
+            $(function () {
+                $.login.init();
+            });
+        })(jQuery);
+
+
+    //设置session
+    function SetCurrentUser(_data) {
+
+        $.ajax({
+            url: "../Login/SetCurrentUser",
+            data: { postData: escape(_data) },
+            type: "post",
+            dataType: "json",
+            success: function (data) {
+                if (data.state == "1") {
+                    $("#login_button").find('span').html("登录成功，正在跳转...");
+                    window.setTimeout(function () {
+                        window.location.href = "/Home/Index";
+                    }, 500);
+                } else {
+                    $("#login_button").removeAttr('disabled').find('span').html("登录");
+                    $.login.formMessage(data.data);
+                }
+            }
+        });
+    }
+    </script>
+</body>
+</html>

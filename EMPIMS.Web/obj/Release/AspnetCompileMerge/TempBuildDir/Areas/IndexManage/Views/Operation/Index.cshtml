@@ -1,0 +1,236 @@
+﻿@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Index.cshtml";
+}
+
+<script>
+    $(function () {
+        //debugger;
+        gridList();
+
+        $("#txt_keyword").focus();
+        document.onkeydown = function (event) {
+            if (event.keyCode == 13) {
+                $("#btn_search").click();
+            }
+        }
+    });
+
+    function gridList() {
+
+
+
+        var rows = 20;
+        var page = 1;
+        var sidx = 'OPERATE_TIME';
+        var sord = "desc";
+        var $gridList = $("#gridList");
+        $gridList.dataGrid({
+            datatype: "local",
+            height: $(window).height() - 120,
+            colModel: [
+                { label: '主键', name: '_id', hidden: true },
+                {
+                    label: '操作类型', name: 'OPERATION_TYPE', width: 80, align: 'center',
+                    formatter: function (cellvalue, options, rowObject) {
+                        var str = "";
+                        switch (cellvalue) {
+                            case "ADD":
+                                str = "新增";
+                                break;
+                            case "UPDATE":
+                                str = "修改";
+                                break;
+                            case "MERGE":
+                                str = "合并";
+                                break;
+                            case "SPLIT":
+                                str = "拆分";
+                                break;
+                            case "POTENTIAL_DUPLICATE":
+                                str = "潜在重复";
+                                break;
+                            case "ACTIVE":
+                                str = "启用";
+                                break;
+                            case "DISABLE":
+                                str = "停用";
+                                break;
+                            default:
+                                str = "其他";
+                                break;
+                        }
+                        return str;
+                    }
+                },
+                { label: '日志主键', name: 'OPERATION_ID', align: 'left', width: 150 },
+                { label: '相关主索引主键', name: 'PERSON_SBR_ID_LIST', width: 300, hidden: true },
+                { label: '相关主索引号', name: 'EMPI_ID_LIST', width: 300, align: 'left' },
+                { label: '操作人', name: 'OPERATE_BY', width: 120, align: 'left' },
+                {
+                    label: '操作时间', name: 'OPERATE_TIME', width: 80, align: 'left',
+                    formatter: "date", formatoptions: { srcformat: 'Y-m-d H:i:s', newformat: 'Y-m-d H:i:s' }
+                }
+            ],
+            pager: "#gridPager",
+            sortname: 'OPERATE_TIME',
+            sortorder: 'desc',
+            viewrecords: true,
+            rowNum: 20, //每页显示记录数   
+            viewrecords: true, //是否显示行数   
+            rowList: [20, 30, 40, 50, 100], //可调整每页显示的记录数 
+            ondblClickRow: btn_details,
+            //multiselect: true,
+            loadComplete: function (data) {
+
+                var op = {
+                    url: "/IndexManage/Operation/GetGridJson",
+                    rows: rows,
+                    page: page,
+                    sidx: sidx,
+                    sord: sord
+                };
+                GetData(op);
+            },
+            gridComplete: function () { },
+            loadError: function (xhr, status, error) {
+
+                //console.log($.parseJSON(xhr.responseText));
+            },
+            onPaging: function (pgBtn) {
+
+                rows = $(".ui-pg-selbox").val();
+                page = Number($('.ui-pg-input').val());
+                switch (pgBtn) {
+                    case "next":
+                        page++;
+                        break;
+                    case "prev":
+                        page--;
+                        break;
+                    case "first":
+                        page = 1;
+                        break;
+                    case "last":
+                        page = $("#sp_1_gridPager").text().replace(" ", "");
+                        $(".ui-pg-input").val(page);
+                        break;
+                    default:
+                }
+            },
+            onSortCol: function (name, index, sortorder) {
+                sidx = name;
+                sord = sortorder;
+            }
+        });
+        $("#btn_search").click(function () {
+            var op = {
+                url: "/IndexManage/Operation/GetGridJson",
+                rows: rows,
+                page: page,
+                sidx: sidx,
+                sord: sord
+            };
+            GetData(op);
+        });
+    }
+
+    function GetData(option) {
+
+        var _data = null;
+        $.ajax({
+            url: option.url,
+            dataType: "json",
+            data: {
+                operation_type: $("#operation_type").val(),
+                start_Date: $("#start_Date").val(),
+                end_Date: $("#end_Date").val(),
+                _search: false,
+                rows: option.rows,
+                page: option.page,
+                sidx: option.sidx,
+                sord: option.sord,
+                start_Date: $("#Start_Date").val(),
+                end_Date: $("#End_Date").val(),
+                keywords: $("#txt_keyword").val()
+            },
+            async: true,
+            beforeSend: function () {
+                $("#gridList").jqGrid("clearGridData");
+                $("#gridList tbody").append("<tr><td id='result' colspan='4' style='border-bottom:none;'><span style='font-size:large;'>加载中...</span></td></tr>");
+            },
+            success: function (data) {
+                _data = data;
+                $("#gridList")[0].addJSONData(_data);
+                if (data.rows.length == 0) {
+                    $("#gridList tbody").append("<tr><td id='result' colspan='4' style='border-bottom:none;'><span style='color:red;font-size:large;'>暂无数据</span></td></tr>");
+                }
+            },
+            complete: function () {
+
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                $("#gridList tbody").append("<tr><td id='result' colspan='4' style='border-bottom:none;'><span style='color:red;font-size:large;'>请求发生错误</span></td></tr>");
+            }
+        });
+    }
+
+    //查看详情
+    function btn_details() {
+        var keyValue = $("#gridList").jqGridRowValue().OPERATION_ID;
+        if ($.checkedRow(keyValue)) {
+            $.modalOpen({
+                id: "Details",
+                title: "日志明细",
+                url: "/IndexManage/Operation/Form?keyValue=" + keyValue,
+                width: "800px",
+                height: "450px",
+                btn: null
+            });
+        }
+    }
+</script>
+
+<div class="topPanel">
+    <div class="toolbar">
+        <div class="btn-group">
+            <a id="btn_compare" class="btn btn-primary dropdown-text" onclick="btn_details()"><i class="fa fa-plus"></i>查看</a>
+        </div>
+        <div class="btn-group">
+            <a class="btn btn-primary" onclick="$.reload()"><span class="glyphicon glyphicon-refresh"></span></a>
+        </div>
+    </div>
+    <div class="search">
+        <table>
+            <tr>
+                <td>状态：<select id="operation_type" style="height: 28px; border-color: #ccc; border-radius: 4px;" onchange="$('#btn_search').click();">
+                    <option value="">全部</option>
+                    <option value="ADD">新增</option>
+                    <option value="UPDATE">修改</option>
+                    <option value="MERGE">合并</option>
+                    <option value="POTENTIAL_DUPLICATE">潜在重复</option>
+                    <option value="SPLIT">拆分</option>
+                </select>&nbsp;
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input id="Start_Date" type="text" class="form-control input-wdatepicker" onfocus="WdatePicker({maxDate:'#F{$dp.$D(\'End_Date\')}'})" placeholder="发生时间（起始）" style="width: 120px;" />
+                        <input id="End_Date" type="text" class="form-control input-wdatepicker" onfocus="WdatePicker({minDate:'#F{$dp.$D(\'Start_Date\')}'})" placeholder="发生时间（截止）" style="width: 120px; margin-left: 5px;" />&nbsp;
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input id="txt_keyword" type="text" class="form-control" placeholder="主索引号" style="width: 200px;">
+                        <span class="input-group-btn">
+                            <button id="btn_search" type="button" class="btn  btn-primary"><i class="fa fa-search"></i></button>
+                        </span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+<div class="gridPanel">
+    <table id="gridList"></table>
+    <div id="gridPager"></div>
+</div>

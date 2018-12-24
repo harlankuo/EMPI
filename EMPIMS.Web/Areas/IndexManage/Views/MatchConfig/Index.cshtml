@@ -1,0 +1,379 @@
+﻿@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Form.cshtml";
+}
+<style>
+    .formValue input {
+        width: 100px !important;
+        height: 20px;
+        margin-left: 10px;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+        border-bottom: 1px solid #B8B8B8;
+        border-radius: 0px;
+    }
+
+    .formTitle {
+        text-align: right;
+        width: 150px !important;
+    }
+</style>
+<script>
+
+
+    $(function () {
+
+        //去掉输入框双击显示输入历史
+        $("input").attr("autocomplete", "off");
+        Init();
+        InitForm();
+        GetPreview();
+    });
+
+    //表单赋值
+    function InitForm() {
+        $.ajax({
+            url: "/IndexManage/MatchConfig/GetAll",
+            dataType: "json",
+            success: function (data) {
+                if (data.length > 0) {
+                    for (var i = 0; i < data.length; i++) {
+                        $("#" + data[i]["Code"] + "").val(data[i]["Value"]);
+                    }
+                }
+            }
+        });
+    }
+
+    //初始化面板高度
+    function Init() {
+        var winHeight = $(window).height();
+        var winWidth = $(window).width();
+        $(".panel").css("height", winHeight - 20);
+        $(".panel").css("width", winWidth - 10);
+        $("#compare").css("height", winHeight - 140);
+        $("#Preview").css("height", winHeight - 140);
+    }
+
+    //保存
+    function btn_save() {
+        if (!$('#form1').formValid()) {
+            return false;
+        }
+
+        $.ajax({
+            url: "/IndexManage/MatchConfig/SubmitForm",
+            data: { postData: escape(JSON.stringify($("#form1").formSerialize())) },
+            type: "post",
+            dataType: "json",
+            success: function (data) {
+                if (data.state == "success") {
+                    $.modalMsg(data.message, data.state);
+                    location.reload();
+                } else {
+                    $.modalAlert(data.message, "error");
+                }
+            }
+        });
+    }
+
+    //组合预览
+    function GetPreview() {
+        $.ajax({
+            url: "/IndexManage/MatchConfig/GetPreview",
+            dataType: "json",
+            success: function (data) {
+                if (data != null) {
+                    var strHtml = "";
+                    if (data["duplit"] != null) {
+                        for (var key in data["duplit"]) {
+                            strHtml += "<li class='list-group-item'>"
+                                    + "<span class=\"badge\">" + key.split("_")[1] + "</span>"
+                                    + data["duplit"][key] + "</li>";
+                        }
+                        $("#PreviewList").html(strHtml);
+                    }
+
+
+                    if (data["merge"] != null) {
+                        strHtml = "";
+                        for (var key in data["merge"]) {
+                            strHtml += "<li class='list-group-item'>"
+                                    + "<span class=\"badge\">" + key.split("_")[1] + "</span>"
+                                    + data["merge"][key] + "</li>";
+                        }
+                        $("#MergeList").html(strHtml);
+                    }
+                }
+
+            }
+        });
+    }
+</script>
+<div class="panel panel-default">
+    <div class="panel-heading">匹配权重配置</div>
+    <div class="panel-body">
+        <div style="padding-top: 0px;">
+            <ul class="nav nav-tabs">
+                <li class="active"><a href="#base" data-toggle="tab">规则定义</a></li>
+                <li><a href="#Preview" data-toggle="tab">组合预览</a></li>
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane active" id="base">
+                    <div id="compare" style="overflow-y: scroll;">
+                        <br />
+                        <div class="alert alert-info" role="alert">
+                            <strong>提示!</strong> 请确保所有已经配置字段的权重值总和大于或等于潜在重复区间最小值。请填写正整数。
+                        </div>
+                        <form id="form1">@*=====【注意Form元素的name属性必须与id一致】=====*@
+                            <table class="form">
+                                <tr>
+                                    <th class="formTitle">潜在重复区间<span style="color: red;">*</span></th>
+                                    <td class="formValue" colspan="3">
+                                        <input id="Standard" name="Standard" type="text" class="form-control required" style="float: left; text-align: center;" />
+                                        <span style="float: left;">- </span>
+                                        <input id="Standard_1" name="Standard_1" type="text" class="form-control required" style="float: left; text-align: center;" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4">
+                                        <hr />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="formTitle">字段权重值配置</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4">
+                                        <hr />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="formTitle">姓名<span style="color: red;">*</span></td>
+                                    <td class="formValue">
+                                        <input id="NAME" name="NAME" type="text" class="form-control required" />
+                                    </td>
+                                    <td class="formTitle">性别</td>
+                                    <td class="formValue">
+                                        <input id="GENDER_NAME" name="GENDER_NAME" class="form-control" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="formTitle">身份证件号码<span style="color: red;">*</span></td>
+                                    <td class="formValue">
+                                        <input id="ID_NO" name="ID_NO" class="form-control required" type="text" />
+                                    </td>
+                                    @*<td class="formTitle">京医通卡号
+                                    </td>
+                                    <td class="formValue">
+                                        <input id="BEIJING_MEDICAL_CARD_NO" name="BEIJING_MEDICAL_CARD_NO" class="form-control" />
+                                    </td>*@
+                                </tr>
+                                <tr>
+                                    <td class="formTitle">病案号</td>
+                                    <td class="formValue">
+                                        <input id="MEDICAL_RECORD_NO" name="MEDICAL_RECORD_NO" class="form-control" type="text" />
+                                    </td>
+
+                                    <td class="formTitle">居民健康卡号</td>
+                                    <td class="formValue">
+                                        <input id="HEALTH_CARD_NO" name="HEALTH_CARD_NO" class="form-control" type="text" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="formTitle">本人电话号码</td>
+                                    <td class="formValue">
+                                        <input id="PHONE_NO" name="PHONE_NO" type="text" class="form-control" />
+                                    </td>
+
+                                    <td class="formTitle">出生日期</td>
+                                    <td class="formValue">
+                                        <input id="DOB" name="DOB" type="text" class="form-control" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="formTitle">医保卡号</td>
+                                    <td class="formValue">
+                                        <input id="MEDICAL_INSURANCE_CARD_NO" name="MEDICAL_INSURANCE_CARD_NO" class="form-control" />
+                                    </td>
+                                    <td class="formTitle">ABO血型名称
+                                    </td>
+                                    <td class="formValue">
+                                        <input id="ABO_BLOOD_TYPE_NAME" name="ABO_BLOOD_TYPE_NAME" class="form-control" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="formTitle">就诊卡号</td>
+                                    <td class="formValue">
+                                        <input id="HOSPITAL_CARD_NO" name="HOSPITAL_CARD_NO" class="form-control" type="text" />
+                                    </td>
+
+                                    <td class="formTitle">门诊病案号
+                                    </td>
+                                    <td class="formValue">
+                                        <input id="OP_MEDICAL_RECORD_NO" name="OP_MEDICAL_RECORD_NO" class="form-control" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="formTitle">Rh血型名称
+                                    </td>
+                                    <td class="formValue">
+                                        <input id="RH_BLOOD_TYPE_NAME" name="RH_BLOOD_TYPE_NAME" class="form-control" />
+                                    </td>
+                                    <td class="formTitle">国籍</td>
+                                    <td class="formValue">
+                                        <input id="CITIZENSHIP_NAME" name="CITIZENSHIP_NAME" class="form-control" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="formTitle">民族</td>
+                                    <td class="formValue">
+                                        <input id="ETHNIC_GROUP_NAME" name="ETHNIC_GROUP_NAME" class="form-control" />
+                                    </td>
+                                    <td class="formTitle">婚姻状况
+                                    </td>
+                                    <td class="formValue">
+                                        <input id="MARITAL_STATUS_NAME" name="MARITAL_STATUS_NAME" type="text" class="form-control" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="formTitle">出生地-省</td>
+                                    <td class="formValue">
+                                        <input id="POB_PROVINCE" name="POB_PROVINCE" class="form-control" />
+                                    </td>
+                                    <td class="formTitle">出生地-市</td>
+                                    <td class="formValue">
+                                        <input id="POB_CITY" name="POB_CITY" class="form-control" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="formTitle">出生地-县</td>
+                                    <td class="formValue">
+                                        <input id="POB_COUNTY" name="POB_COUNTY" type="text" class="form-control" />
+                                    </td>
+                                    <td class="formTitle">籍贯-省</td>
+                                    <td class="formValue">
+                                        <input id="NATIVE_PLACE_PROVINCE" name="NATIVE_PLACE_PROVINCE" class="form-control" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="formTitle">籍贯-市</td>
+                                    <td class="formValue">
+                                        <input id="NATIVE_PLACE_CITY" name="NATIVE_PLACE_CITY" class="form-control" />
+                                    </td>
+
+                                    <td class="formTitle">现住址-省</td>
+                                    <td class="formValue">
+                                        <input id="PRESENT_ADDRESS_PROVINCE" name="PRESENT_ADDRESS_PROVINCE" class="form-control" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="formTitle">现住址-市</td>
+                                    <td class="formValue">
+                                        <input id="PRESENT_ADDRESS_CITY" name="PRESENT_ADDRESS_CITY" class="form-control" />
+                                    </td>
+
+                                    <td class="formTitle">现住址-县</td>
+                                    <td class="formValue">
+                                        <input id="PRESENT_ADDRESS_COUNTY" name="PRESENT_ADDRESS_COUNTY" class="form-control" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="formTitle">现住址-乡</td>
+                                    <td class="formValue">
+                                        <input id="PRESENT_ADDRES_COUNTRY" name="PRESENT_ADDRES_COUNTRY" class="form-control" />
+                                    </td>
+
+                                    <td class="formTitle">现住址-村</td>
+                                    <td class="formValue">
+                                        <input id="PRESENT_ADDRES_VILLAGE" name="PRESENT_ADDRES_VILLAGE" class="form-control" type="text" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="formTitle">现住址-门牌号码
+                                    </td>
+                                    <td class="formValue">
+                                        <input id="PRESENT_ADDRES_HOUSE_NO" name="PRESENT_ADDRES_HOUSE_NO" class="form-control" />
+                                    </td>
+
+                                    <td class="formTitle">现住址-邮编
+                                    </td>
+                                    <td class="formValue">
+                                        <input id="PRESENT_ADDRES_POSTAL_CODE" name="PRESENT_ADDRES_POSTAL_CODE" class="form-control" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="formTitle" style="width: 100px;">工作单位名称</td>
+                                    <td class="formValue">
+                                        <input id="EMPLOYER_NAME" name="EMPLOYER_NAME" type="text" class="form-control" />
+                                    </td>
+
+                                    <td class="formTitle" style="width: 100px;">工作单位-省</td>
+                                    <td class="formValue">
+                                        <input id="EMPLOYER_PROVINCE" name="EMPLOYER_PROVINCE" class="form-control" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="formTitle">工作单位-市</td>
+                                    <td class="formValue">
+                                        <input id="EMPLOYER_CITY" name="EMPLOYER_CITY" class="form-control" />
+                                    </td>
+                                    <td class="formTitle">工作单位-县</td>
+                                    <td class="formValue">
+                                        <input id="EMPLOYER_COUNTY" name="EMPLOYER_COUNTY" class="form-control" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="formTitle">工作单位电话号码</td>
+                                    <td class="formValue">
+                                        <input id="EMPLOYER_PHONE_NO" name="EMPLOYER_PHONE_NO" class="form-control" type="text" />
+                                    </td>
+                                    <td class="formTitle">工作单位-邮编</td>
+                                    <td class="formValue">
+                                        <input id="EMPLOYER_POSTAL_CODE" name="EMPLOYER_POSTAL_CODE" class="form-control" type="text" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4">
+                                        <hr />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="height: 40px;">
+                                        <button type="button" class="btn btn-primary" style="margin-left: 40%;" onclick="btn_save()">
+                                            <i class="fa fa-save" aria-hidden="true"></i>&nbsp;保存
+                                        </button>
+                                    </td>
+                                </tr>
+                                @*<tr>
+                                    <td colspan="4">
+                                        <hr />
+                                    </td>
+                                </tr>*@
+                            </table>
+                        </form>
+                    </div>
+                </div>
+                <div class="tab-pane" id="Preview" style="overflow-y: scroll;">
+                    <br />
+                    <h4>符合潜在重复组合</h4>
+                    <ul class="list-group" id="PreviewList" style="margin-top: 10px;">
+                        <li class="list-group-item">
+                            <span class="badge">0</span>
+                            暂无
+                        </li>
+                    </ul>
+                    <br />
+                    <h4>符合自动合并组合</h4>
+                    <ul class="list-group" id="MergeList" style="margin-top: 10px;">
+                        <li class="list-group-item">
+                            <span class="badge">0</span>
+                            暂无
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

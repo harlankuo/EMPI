@@ -1,0 +1,376 @@
+﻿@{
+    ViewBag.Title = "Compare";
+    Layout = "~/Views/Shared/_Form.cshtml";
+}
+<script src="~/Content/js/template/baiduTemplate.js"></script>
+<style>
+    #copyrightcontent {
+        height: 30px;
+        line-height: 29px;
+        overflow: hidden;
+        position: absolute;
+        top: 100%;
+        margin-top: -30px;
+        width: 100%;
+        background-color: #fff;
+        border: 1px solid #e6e6e6;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .dashboard-stats {
+        float: left;
+        width: 20%;
+    }
+
+    .dashboard-stats-item {
+        position: relative;
+        overflow: hidden;
+        color: #fff;
+        cursor: pointer;
+        height: 105px;
+        margin-right: 25px;
+        margin-bottom: 10px;
+        padding: 20px 20px;
+    }
+
+        .dashboard-stats-item .m-top-none {
+            margin-top: 2px;
+        }
+
+        .dashboard-stats-item .stat-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 30px;
+            opacity: .3;
+        }
+
+    .dashboard-stats i.fa.stats-icon {
+        width: 50px;
+        padding: 20px;
+        font-size: 50px;
+        text-align: center;
+        color: #fff;
+        height: 50px;
+        border-radius: 10px;
+    }
+
+    .panel-default {
+        border: none;
+        border-radius: 0px;
+        margin-bottom: 0px;
+        box-shadow: none;
+        -webkit-box-shadow: none;
+    }
+
+        .panel-default > .panel-heading {
+            color: #777;
+            background-color: #fff;
+            border-color: #e6e6e6;
+            padding: 10px 10px;
+        }
+
+        .panel-default > .panel-body {
+            padding: 10px;
+            padding-bottom: 0px;
+        }
+
+    .name {
+        width: 150px !important;
+        text-align: left;
+    }
+
+    #property {
+        width: 150px !important;
+    }
+</style>
+<script type="text/javascript">
+    var keyValue = $.request("keyValue");
+    $(function () {
+        GetIndexs();
+        initWindow();
+    });
+
+    //初始化页面
+    function initWindow() {
+        var winHeight = $(window).height();
+        var winWidth = $(window).width();
+        $(".myPannel").css("height", winHeight - 20);
+    }
+
+    //获取主索引记录
+    function GetIndexs() {
+        var strHtml = "";
+        var _data = null;
+        $.AjaxJson("/IndexManage/PrimaryIndex/GetCompareIndexJson", { keyValue: keyValue }, function (data) {
+            _data = data;
+            for (var key in _data[0]) {
+                _data[0][key] = _data[0][key] == null ? "" : _data[0][key];               
+            }
+            strHtml = baidu.template('compare-template', _data[0]);
+            $("#compare").html(strHtml);
+            for (var i = 1; i < _data.length; i++) {
+                //$("#item").append("<th>索引_" + (i + 1) + "</th>");
+                for (var key in _data[1]) {                   
+                    $("#" + key + "").append("<td class='value'>" + (_data[i][key] == null ? "" : _data[i][key]) + "</td>");
+                }
+            }
+
+
+            var arr_td = [];
+
+            //判断同一行属性的值是否相同
+            $("table tr").each(function (index, element) {
+
+                if (this.id == "EMPI_ID") {
+                    return;
+                }
+
+                arr_td = [];
+
+                $(this).find(".value").each(function () {
+
+                    if (arr_td.indexOf($(this).text()) < 0) {
+                        arr_td.push($(this).text());
+                    }
+                });
+
+                if (arr_td.length > 1) {
+                    $(this).find(".value").css("background-color", "yellow");
+                }
+            });
+
+        });
+
+    }
+</script>
+<div id="areascontent">
+    <div class="rows" style="margin-bottom: 1%; overflow: hidden;">
+        <div style="float: left; width: 100%;">
+            <div class="myPannel" style="border: 1px solid #e6e6e6; background-color: #fff; overflow: scroll;">
+                <div class="panel panel-default">
+                    <div class="panel-body" style="padding-bottom: 0px;">
+                        <h4 style="margin-left: 50%;">主索引对比</h4>
+                        <div id="compare">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@*对比模板*@
+<script id="compare-template" type="text/html">
+    <table class="table table-bordered">
+        @*<tr id="item">
+            <th>属性</th>
+            <th>主索引_1</th>
+        </tr>*@
+        <tr id="EMPI_ID">
+            <td class="name" style="width: 150px;">主索引号</td>
+            <td class="value"><%=EMPI_ID%></td>
+        </tr>
+        <tr id="NAME">
+            <td class="name" style="width: 150px;">姓名</td>
+            <td class="value"><%=NAME%></td>
+        </tr>
+        <tr id="CATEGORY_CODE">
+            <td class="name">人员分类</td>
+            <td class="value"><%=CATEGORY_CODE%></td>
+        </tr>
+        <tr id="ID_NO">
+            <td class="name">身份证件号码</td>
+            <td class="value"><%=ID_NO%></td>
+        </tr>
+        <tr id="GENDER_NAME">
+            <td class="name">性别</td>
+            <td class="value"><%=GENDER_NAME%></td>
+        </tr>
+        <tr id="MEDICAL_RECORD_NO">
+            <td class="name">病案号</td>
+            <td class="value"><%=MEDICAL_RECORD_NO%></td>
+        </tr>
+        <tr id="HEALTH_CARD_NO">
+            <td class="name">居民健康卡号</td>
+            <td class="value"><%=HEALTH_CARD_NO%></td>
+        </tr>
+        <tr id="PHONE_NO">
+            <td class="name">本人电话号码</td>
+            <td class="value"><%=PHONE_NO%></td>
+        </tr>
+        <tr id="DOB">
+            <td class="name">出生日期</td>
+            <td class="value"><%=DOB%></td>
+        </tr>
+        <tr id="ID_TYPE_CODE">
+            <td class="name">身份证件类别代码</td>
+            <td class="value"><%=ID_TYPE_CODE%></td>
+        </tr>
+        <tr id="ID_TYPE_NAME">
+            <td class="name">身份证件类别名称</td>
+            <td class="value"><%=ID_TYPE_NAME%></td>
+        </tr>
+        <tr id="MEDICAL_INSURANCE_TYPE_CODE">
+            <td class="name">医疗保险类别代码</td>
+            <td class="value"><%=MEDICAL_INSURANCE_TYPE_CODE%></td>
+        </tr>
+        <tr id="MEDICAL_INSURANCE_TYPE_NAME">
+            <td class="name">医疗保险类别名称</td>
+            <td class="value"><%=MEDICAL_INSURANCE_TYPE_NAME%></td>
+        </tr>
+        <tr id="MEDICAL_INSURANCE_CARD_NO">
+            <td class="name">医保卡号</td>
+            <td class="value"><%=MEDICAL_INSURANCE_CARD_NO%></td>
+        </tr>
+        <tr id="HOSPITAL_CARD_NO">
+            <td class="name">就诊卡号</td>
+            <td class="value"><%=HOSPITAL_CARD_NO%></td>
+        </tr>
+        <tr id="OP_MEDICAL_RECORD_NO">
+            <td class="name">门诊病案号</td>
+            <td class="value"><%=OP_MEDICAL_RECORD_NO%></td>
+        </tr>
+        <tr id="BEIJING_MEDICAL_CARD_NO">
+            <td class="name">京易通卡号</td>
+            <td class="value"><%=BEIJING_MEDICAL_CARD_NO%></td>
+        </tr>
+        <tr id="ABO_BLOOD_TYPE_NAME">
+            <td class="name">ABO血型名称</td>
+            <td class="value"><%=ABO_BLOOD_TYPE_NAME%></td>
+        </tr>
+        <tr id="RH_BLOOD_TYPE_NAME">
+            <td class="name">Rh血型名称</td>
+            <td class="value"><%=RH_BLOOD_TYPE_NAME%></td>
+        </tr>
+        <tr id="CITIZENSHIP_NAME">
+            <td class="name">国籍</td>
+            <td class="value"><%=CITIZENSHIP_NAME%></td>
+        </tr>
+        <tr id="ETHNIC_GROUP_NAME">
+            <td class="name">民族</td>
+            <td class="value"><%=ETHNIC_GROUP_NAME%></td>
+        </tr>
+        <tr id="OCCUPATION_NAME">
+            <td class="name">职业类别</td>
+            <td class="value"><%=OCCUPATION_NAME%></td>
+        </tr>
+        <tr id="EDUCATION_LEVEL_NAME">
+            <td class="name">文化程度</td>
+            <td class="value"><%=EDUCATION_LEVEL_NAME%></td>
+        </tr>
+        <tr id="POB_PROVINCE">
+            <td class="name">出生地-省</td>
+            <td class="value"><%=POB_PROVINCE%></td>
+        </tr>
+        <tr id="POB_CITY">
+            <td class="name">出生地-市</td>
+            <td class="value"><%=POB_CITY%></td>
+        </tr>
+        <tr id="POB_COUNTY">
+            <td class="name">出生地-县</td>
+            <td class="value"><%=POB_COUNTY%></td>
+        </tr>
+        <tr id="NATIVE_PLACE_PROVINCE">
+            <td class="name">籍贯-省</td>
+            <td class="value"><%=NATIVE_PLACE_PROVINCE%></td>
+        </tr>
+        <tr id="NATIVE_PLACE_CITY">
+            <td class="name">籍贯-市</td>
+            <td class="value"><%=NATIVE_PLACE_CITY%></td>
+        </tr>
+        <tr id="PRESENT_ADDRESS_PROVINCE">
+            <td class="name">现住址-省</td>
+            <td class="value"><%=PRESENT_ADDRESS_PROVINCE%></td>
+        </tr>
+        <tr id="PRESENT_ADDRESS_CITY">
+            <td class="name">现住址-市</td>
+            <td class="value"><%=PRESENT_ADDRESS_CITY%></td>
+        </tr>
+        <tr id="PRESENT_ADDRESS_COUNTY">
+            <td class="name">现住址-县</td>
+            <td class="value"><%=PRESENT_ADDRESS_COUNTY%></td>
+        </tr>
+        <tr id="PRESENT_ADDRES_COUNTRY">
+            <td class="name">现住址-乡</td>
+            <td class="value"><%=PRESENT_ADDRES_COUNTRY%></td>
+        </tr>
+        <tr id="PRESENT_ADDRES_VILLAGE">
+            <td class="name">现住址-村</td>
+            <td class="value"><%=PRESENT_ADDRES_VILLAGE%></td>
+        </tr>
+        <tr id="PRESENT_ADDRES_HOUSE_NO">
+            <td class="name">现住址-门牌号码</td>
+            <td class="value"><%=PRESENT_ADDRES_HOUSE_NO%></td>
+        </tr>
+        <tr id="PRESENT_ADDRES_POSTAL_CODE">
+            <td class="name">现住址-邮编</td>
+            <td class="value"><%=PRESENT_ADDRES_POSTAL_CODE%></td>
+        </tr>
+        <tr id="EMPLOYER_NAME">
+            <td class="name">工作单位名称</td>
+            <td class="value"><%=EMPLOYER_NAME%></td>
+        </tr>
+        <tr id="EMPLOYER_PROVINCE">
+            <td class="name">工作单位-省</td>
+            <td class="value"><%=EMPLOYER_PROVINCE%></td>
+        </tr>
+        <tr id="EMPLOYER_CITY">
+            <td class="name">工作单位-市</td>
+            <td class="value"><%=EMPLOYER_CITY%></td>
+        </tr>
+        <tr id="EMPLOYER_COUNTY">
+            <td class="name">工作单位-县</td>
+            <td class="value"><%=EMPLOYER_COUNTY%></td>
+        </tr>
+        <tr id="EMPLOYER_PHONE_NO">
+            <td class="name">工作单位电话号码</td>
+            <td class="value"><%=EMPLOYER_PHONE_NO%></td>
+        </tr>
+        <tr id="EMPLOYER_POSTAL_CODE">
+            <td class="name">工作单位-邮编</td>
+            <td class="value"><%=EMPLOYER_POSTAL_CODE%></td>
+        </tr>
+        <tr id="CONTACT_NAME">
+            <td class="name">联系人姓名</td>
+            <td class="value"><%=CONTACT_NAME%></td>
+        </tr>
+        <tr id="CONTACT_ADDRESS">
+            <td class="name">联系人地址</td>
+            <td class="value"><%=CONTACT_ADDRESS%></td>
+        </tr>
+        <tr id="CONTACT_RELATIONSHIP_NAME">
+            <td class="name">联系人同本人关系名称</td>
+            <td class="value"><%=CONTACT_RELATIONSHIP_NAME%></td>
+        </tr>
+        <tr id="CONTACT_RELATIONSHIP_CODE">
+            <td class="name">联系人同本人关系代码</td>
+            <td class="value"><%=CONTACT_RELATIONSHIP_CODE%></td>
+        </tr>
+        <tr id="CONTACT_PHONE_NO">
+            <td class="name">联系人电话号码</td>
+            <td class="value"><%=CONTACT_PHONE_NO%></td>
+        </tr>
+        <tr id="VIP_INDICATOR">
+            <td class="name">VIP标识</td>
+            <td class="value"><%=VIP_INDICATOR%></td>
+        </tr>
+        <tr id="DEATH_INDICATOR">
+            <td class="name">死亡标识</td>
+            <td class="value"><%=DEATH_INDICATOR%></td>
+        </tr>
+        <tr id="DOD">
+            <td class="name">死亡日期</td>
+            <td class="value"><%=DOD%></td>
+        </tr>
+        <tr id="STATUS">
+            <td class="name">状态</td>
+            <td class="value"><%=STATUS%></td>
+        </tr>
+        <tr id="MARITAL_STATUS_NAME">
+            <td class="name">婚姻状况</td>
+            <td class="value"><%=MARITAL_STATUS_NAME%></td>
+        </tr>
+    </table>
+
+</script>

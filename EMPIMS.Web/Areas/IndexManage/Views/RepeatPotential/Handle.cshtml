@@ -1,0 +1,438 @@
+﻿@{
+    ViewBag.Title = "Handle";
+    Layout = "~/Views/Shared/_Index.cshtml";
+}
+
+<script src="~/Content/js/template/baiduTemplate.js"></script>
+
+<script>
+    var person_sbr_id_1 = $.request("person_sbr_id_1");
+    var person_sbr_id_2 = $.request("person_sbr_id_2");
+    var keyValue = $.request("keyValue");
+    var status = unescape($.request("status"));
+
+    $(function () {
+        if (status == "已解决") {
+            $("#footer").hide();
+        }
+        initWindow();
+        type_potentialL_duplicate();
+
+    });
+
+    $(window).resize(function () {
+        initWindow();
+    });
+
+    //初始化页面
+    function initWindow() {
+        var winHeight = $(window).height();
+        var winWidth = $(window).width();
+        $(".panel").css("height", winHeight - 25);
+        $(".panel").css("width", winWidth - 10);
+        $("#compare").css("height", winHeight - 140);
+    }
+
+    //潜在重复
+    function type_potentialL_duplicate() {
+        var strHtml = "";
+        var obj = {};
+
+        $.ajax({
+            url: "/IndexManage/RepeatPotential/GetIndexJson",
+            type: "post",
+            data: { keyValue: keyValue },
+            dataType: "json",
+            async: false,
+            success: function (data) {
+
+                if (!!data) {
+
+                    for (var key in data.DUPLICATE_0) {
+
+                        if (data.DUPLICATE_0[key] == null) {
+                            data.DUPLICATE_0[key] = "";
+                        }
+                        obj["" + key + "_0"] = data.DUPLICATE_0[key];
+                    }
+
+                    for (var key in data.DUPLICATE_1) {
+
+                        if (data.DUPLICATE_1[key] == null) {
+                            data.DUPLICATE_1[key] = "";
+                        }
+                        obj["" + key + "_1"] = data.DUPLICATE_1[key];
+                    }
+                    strHtml = baidu.template('potential-template', obj);
+                }
+            }
+        });
+
+        $("#compare").html(strHtml);
+
+        //判断同一行属性的值是否相同
+        $("table tr").each(function (index, element) {
+            arr_td = [];
+            if (this.id == "empi_id") {
+                return;
+            }
+            $(this).find(".value").each(function () {
+
+                if (arr_td.indexOf($(this).text()) < 0) {
+                    arr_td.push($(this).text());
+                }
+            });
+
+            if (arr_td.length > 1) {
+                $(this).find(".value").css("background-color", "yellow");
+            }
+        });
+    }
+
+    //放弃合并
+    function merge_abandon() {
+
+        $.modalConfirm("您确定放弃合并吗？", function (r) {
+            if (r) {
+                $.ajax({
+                    url: "/IndexManage/RepeatPotential/AbandonMerge",
+                    type: "post",
+                    data: { keyValue: keyValue },
+                    dataType: "json",
+                    async: false,
+                    success: function (data) {
+                        if (!!data) {
+                            $.modalMsg(data.message, data.state);
+                            if (data.state == "success") {
+                                $("#footer").hide();
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    //合并操作
+    function Merge(type) {
+        var targetId = person_sbr_id_1;
+        var sourceId = person_sbr_id_2;
+        var msg = "确定合并到新索引？";
+
+        //合并到旧记录
+        if (type == "new2old") {
+            targetId = person_sbr_id_2;
+            sourceId = person_sbr_id_1;
+            msg = "确定合并到旧索引？";
+        }
+
+        $.modalConfirm(msg, function (r) {
+            if (r) {
+                $.ajax({
+                    url: "/IndexManage/RepeatPotential/Merge",
+                    type: "post",
+                    data: { keyValue: keyValue, targetId: targetId, sourceId: sourceId },
+                    dataType: "json",
+                    async: false,
+                    success: function (data) {                        
+                        if (!!data) {
+                            $.modalMsg(data.message, data.state);
+                            if (data.state == "success") {
+                                $("#footer").hide();
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
+</script>
+
+@*潜在重复*@
+<script id="potential-template" type="text/html">
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <tr>
+                <th style="text-align: center; width: 120px;">属性</th>
+                <th style="text-align: center;">新索引</th>
+                <th style="text-align: center;">旧索引</th>
+            </tr>
+            <tr id="empi_id">
+                <td class="name">主索引号</td>
+                <td class="value"><%=EMPI_ID_0%></td>
+                <td class="value"><%=EMPI_ID_1%></td>
+            </tr>
+            <tr>
+                <td class="name">姓名</td>
+                <td class="value"><%=NAME_0%></td>
+                <td class="value"><%=NAME_1%></td>
+            </tr>
+            <tr>
+                <td class="name">人员分类</td>
+                <td class="value"><%=CATEGORY_CODE_0%></td>
+                <td class="value"><%=CATEGORY_CODE_1%></td>
+            </tr>
+            <tr>
+                <td class="name">身份证件号码</td>
+                <td class="value"><%=ID_NO_0%></td>
+                <td class="value"><%=ID_NO_1%></td>
+            </tr>
+            <tr>
+                <td class="name">性别</td>
+                <td class="value"><%=GENDER_NAME_0%></td>
+                <td class="value"><%=GENDER_NAME_1%></td>
+            </tr>
+            <tr>
+                <td class="name">病案号</td>
+                <td class="value"><%=MEDICAL_RECORD_NO_0%></td>
+                <td class="value"><%=MEDICAL_RECORD_NO_1%></td>
+            </tr>
+            <tr>
+                <td class="name">居民健康卡号</td>
+                <td class="value"><%=HEALTH_CARD_NO_0%></td>
+                <td class="value"><%=HEALTH_CARD_NO_1%></td>
+            </tr>
+            <tr>
+                <td class="name">本人电话号码</td>
+                <td class="value"><%=PHONE_NO_0%></td>
+                <td class="value"><%=PHONE_NO_1%></td>
+            </tr>
+            <tr>
+                <td class="name">出生日期</td>
+                <td class="value"><%=DOB_0%></td>
+                <td class="value"><%=DOB_1%></td>
+            </tr>
+            <tr>
+                <td class="name">婚姻状况</td>
+                <td class="value"><%=MARITAL_STATUS_NAME_0%></td>
+                <td class="value"><%=MARITAL_STATUS_NAME_1%></td>
+            </tr>
+            <tr>
+                <td class="name">身份证件类别代码</td>
+                <td class="value"><%=ID_TYPE_CODE_0%></td>
+                <td class="value"><%=ID_TYPE_CODE_1%></td>
+            </tr>
+            <tr>
+                <td class="name">身份证件类别名称</td>
+                <td class="value"><%=ID_TYPE_NAME_0%></td>
+                <td class="value"><%=ID_TYPE_NAME_1%></td>
+            </tr>
+            <tr>
+                <td class="name">医疗保险类别代码</td>
+                <td class="value"><%=MEDICAL_INSURANCE_TYPE_CODE_0%></td>
+                <td class="value"><%=MEDICAL_INSURANCE_TYPE_CODE_1%></td>
+            </tr>
+            <tr>
+                <td class="name">医疗保险类别名称</td>
+                <td class="value"><%=MEDICAL_INSURANCE_TYPE_NAME_0%></td>
+                <td class="value"><%=MEDICAL_INSURANCE_TYPE_NAME_1%></td>
+            </tr>
+            <tr>
+                <td class="name">医保卡号</td>
+                <td class="value"><%=MEDICAL_INSURANCE_CARD_NO_0%></td>
+                <td class="value"><%=MEDICAL_INSURANCE_CARD_NO_1%></td>
+            </tr>
+            <tr>
+                <td class="name">就诊卡号</td>
+                <td class="value"><%=HOSPITAL_CARD_NO_0%></td>
+                <td class="value"><%=HOSPITAL_CARD_NO_1%></td>
+            </tr>
+            <tr>
+                <td class="name">门诊病案号</td>
+                <td class="value"><%=OP_MEDICAL_RECORD_NO_0%></td>
+                <td class="value"><%=OP_MEDICAL_RECORD_NO_1%></td>
+            </tr>
+            <tr>
+                <td class="name">京易通卡号</td>
+                <td class="value"><%=BEIJING_MEDICAL_CARD_NO_0%></td>
+                <td class="value"><%=BEIJING_MEDICAL_CARD_NO_1%></td>
+            </tr>
+            <tr>
+                <td class="name">ABO血型名称</td>
+                <td class="value"><%=ABO_BLOOD_TYPE_NAME_0%></td>
+                <td class="value"><%=ABO_BLOOD_TYPE_NAME_1%></td>
+            </tr>
+            <tr>
+                <td class="name">Rh血型名称</td>
+                <td class="value"><%=RH_BLOOD_TYPE_NAME_0%></td>
+                <td class="value"><%=RH_BLOOD_TYPE_NAME_1%></td>
+            </tr>
+            <tr>
+                <td class="name">国籍</td>
+                <td class="value"><%=CITIZENSHIP_NAME_0%></td>
+                <td class="value"><%=CITIZENSHIP_NAME_1%></td>
+            </tr>
+            <tr>
+                <td class="name">民族</td>
+                <td class="value"><%=ETHNIC_GROUP_NAME_0%></td>
+                <td class="value"><%=ETHNIC_GROUP_NAME_1%></td>
+            </tr>
+            <tr>
+                <td class="name">职业类别</td>
+                <td class="value"><%=OCCUPATION_NAME_0%></td>
+                <td class="value"><%=OCCUPATION_NAME_1%></td>
+            </tr>
+            <tr>
+                <td class="name">文化程度</td>
+                <td class="value"><%=EDUCATION_LEVEL_NAME_0%></td>
+                <td class="value"><%=EDUCATION_LEVEL_NAME_1%></td>
+            </tr>
+            <tr>
+                <td class="name">出生地-省</td>
+                <td class="value"><%=POB_PROVINCE_0%></td>
+                <td class="value"><%=POB_PROVINCE_1%></td>
+            </tr>
+            <tr>
+                <td class="name">出生地-市</td>
+                <td class="value"><%=POB_CITY_0%></td>
+                <td class="value"><%=POB_CITY_1%></td>
+            </tr>
+            <tr>
+                <td class="name">出生地-县</td>
+                <td class="value"><%=POB_COUNTY_0%></td>
+                <td class="value"><%=POB_COUNTY_1%></td>
+            </tr>
+            <tr>
+                <td class="name">籍贯-省</td>
+                <td class="value"><%=NATIVE_PLACE_PROVINCE_0%></td>
+                <td class="value"><%=NATIVE_PLACE_PROVINCE_1%></td>
+            </tr>
+            <tr>
+                <td class="name">籍贯-市</td>
+                <td class="value"><%=NATIVE_PLACE_CITY_0%></td>
+                <td class="value"><%=NATIVE_PLACE_CITY_1%></td>
+            </tr>
+            <tr>
+                <td class="name">现住址-省</td>
+                <td class="value"><%=PRESENT_ADDRESS_PROVINCE_0%></td>
+                <td class="value"><%=PRESENT_ADDRESS_PROVINCE_1%></td>
+            </tr>
+            <tr>
+                <td class="name">现住址-市</td>
+                <td class="value"><%=PRESENT_ADDRESS_CITY_0%></td>
+                <td class="value"><%=PRESENT_ADDRESS_CITY_1%></td>
+            </tr>
+            <tr>
+                <td class="name">现住址-县</td>
+                <td class="value"><%=PRESENT_ADDRESS_COUNTY_0%></td>
+                <td class="value"><%=PRESENT_ADDRESS_COUNTY_1%></td>
+            </tr>
+            <tr>
+                <td class="name">现住址-乡</td>
+                <td class="value"><%=PRESENT_ADDRES_COUNTRY_0%></td>
+                <td class="value"><%=PRESENT_ADDRES_COUNTRY_1%></td>
+            </tr>
+            <tr>
+                <td class="name">现住址-村</td>
+                <td class="value"><%=PRESENT_ADDRES_VILLAGE_0%></td>
+                <td class="value"><%=PRESENT_ADDRES_VILLAGE_1%></td>
+            </tr>
+            <tr>
+                <td class="name">现住址-门牌号码</td>
+                <td class="value"><%=PRESENT_ADDRES_HOUSE_NO_0%></td>
+                <td class="value"><%=PRESENT_ADDRES_HOUSE_NO_1%></td>
+            </tr>
+            <tr>
+                <td class="name">现住址-邮编</td>
+                <td class="value"><%=PRESENT_ADDRES_POSTAL_CODE_0%></td>
+                <td class="value"><%=PRESENT_ADDRES_POSTAL_CODE_1%></td>
+            </tr>
+            <tr>
+                <td class="name">工作单位名称</td>
+                <td class="value"><%=EMPLOYER_NAME_0%></td>
+                <td class="value"><%=EMPLOYER_NAME_1%></td>
+            </tr>
+            <tr>
+                <td class="name">工作单位-省</td>
+                <td class="value"><%=EMPLOYER_PROVINCE_0%></td>
+                <td class="value"><%=EMPLOYER_PROVINCE_1%></td>
+            </tr>
+            <tr>
+                <td class="name">工作单位-市</td>
+                <td class="value"><%=EMPLOYER_CITY_0%></td>
+                <td class="value"><%=EMPLOYER_CITY_1%></td>
+            </tr>
+            <tr>
+                <td class="name">工作单位-县</td>
+                <td class="value"><%=EMPLOYER_COUNTY_0%></td>
+                <td class="value"><%=EMPLOYER_COUNTY_1%></td>
+            </tr>
+            <tr>
+                <td class="name">工作单位电话号码</td>
+                <td class="value"><%=EMPLOYER_PHONE_NO_0%></td>
+                <td class="value"><%=EMPLOYER_PHONE_NO_1%></td>
+            </tr>
+            <tr>
+                <td class="name">工作单位-邮编</td>
+                <td class="value"><%=EMPLOYER_POSTAL_CODE_0%></td>
+                <td class="value"><%=EMPLOYER_POSTAL_CODE_1%></td>
+            </tr>
+            <tr>
+                <td class="name">联系人姓名</td>
+                <td class="value"><%=CONTACT_NAME_0%></td>
+                <td class="value"><%=CONTACT_NAME_1%></td>
+            </tr>
+            <tr>
+                <td class="name">联系人地址</td>
+                <td class="value"><%=CONTACT_ADDRESS_0%></td>
+                <td class="value"><%=CONTACT_ADDRESS_1%></td>
+            </tr>
+            <tr>
+                <td class="name">联系人同本人关系名称</td>
+                <td class="value"><%=CONTACT_RELATIONSHIP_NAME_0%></td>
+                <td class="value"><%=CONTACT_RELATIONSHIP_NAME_1%></td>
+            </tr>
+            <tr>
+                <td class="name">联系人同本人关系代码</td>
+                <td class="value"><%=CONTACT_RELATIONSHIP_CODE_0%></td>
+                <td class="value"><%=CONTACT_RELATIONSHIP_CODE_1%></td>
+            </tr>
+            <tr>
+                <td class="name">联系人电话号码</td>
+                <td class="value"><%=CONTACT_PHONE_NO_0%></td>
+                <td class="value"><%=CONTACT_PHONE_NO_1%></td>
+            </tr>
+            <tr>
+                <td class="name">VIP标识</td>
+                <td class="value"><%=VIP_INDICATOR_0%></td>
+                <td class="value"><%=VIP_INDICATOR_1%></td>
+            </tr>
+            <tr>
+                <td class="name">死亡标识</td>
+                <td class="value"><%=DEATH_INDICATOR_0%></td>
+                <td class="value"><%=DEATH_INDICATOR_1%></td>
+            </tr>
+            <tr>
+                <td class="name">死亡日期</td>
+                <td class="value"><%=DOD_0%></td>
+                <td class="value"><%=DOD_1%></td>
+            </tr>
+            <tr>
+                <td class="name">状态</td>
+                <td class="value"><%=STATUS_0%></td>
+                <td class="value"><%=STATUS_1%></td>
+            </tr>
+        </table>
+    </div>
+</script>
+
+<div class="panel panel-default">
+    <div class="panel-heading">潜在重复查看</div>
+    <div class="panel-body">
+        <div id="compare" style="overflow-y: scroll;"></div>
+    </div>
+    <div class="panel-footer" id="footer">
+
+        <button type="button" class="btn btn-danger" style="float: right; margin-left: 5px;" onclick="merge_abandon()">
+            <i class="fa fa-reply" aria-hidden="true"></i>&nbsp;放弃合并 
+        </button>
+
+        <button type="button" class="btn btn-success" style="float: right; margin-left: 5px;" onclick="Merge('new2old')">
+            <i class="fa fa-arrow-circle-right" aria-hidden="true"></i>&nbsp;合并到旧索引
+        </button>
+
+        <button type="button" class="btn btn-warning" style="float: right; margin-left: 5px;" onclick="Merge('old2new')">
+            <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>&nbsp;合并到新索引 
+        </button>
+    </div>
+</div>

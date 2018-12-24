@@ -1,0 +1,4 @@
+2018-01-10 13:30:59,262 - EMPIMS.Web.Controllers.Home.HomeController - “EMPIMS.BLL.DBHelper.MongoDBHelper`1”的类型初始值设定项引发异常。
+2018-01-10 13:30:59,275 - EMPIMS.Web.Controllers.Home.HomeController - “EMPIMS.BLL.DBHelper.MongoDBHelper`1”的类型初始值设定项引发异常。
+2018-01-10 13:31:02,470 - EMPIMS.Web.Controllers.Home.HomeController - “EMPIMS.BLL.DBHelper.MongoDBHelper`1”的类型初始值设定项引发异常。
+2018-01-10 17:27:19,496 - IndexSearchService - 输入字符串的格式不正确。

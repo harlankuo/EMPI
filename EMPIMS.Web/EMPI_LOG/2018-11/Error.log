@@ -1,0 +1,3 @@
+2018-11-07 20:46:51,008 - EMPIMS.Web.Controllers.Home.HomeController - Command 'create' failed: a collection 'EMPI_2.EMPI_OPERATION' already exists (response: { "ok" : 0.0, "errmsg" : "a collection 'EMPI_2.EMPI_OPERATION' already exists", "code" : 48, "codeName" : "NamespaceExists" })
+2018-11-27 14:59:36,827 - EMPIMS.Web.Controllers.Home.HomeController - 不能对已开始的任务调用 Start。
+2018-11-27 15:00:07,427 - EMPIMS.Web.Controllers.Home.HomeController - 不能对已完成的任务调用 Start。

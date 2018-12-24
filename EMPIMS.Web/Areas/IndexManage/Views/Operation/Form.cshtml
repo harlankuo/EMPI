@@ -1,0 +1,1070 @@
+﻿@{
+    ViewBag.Title = "Form";
+    Layout = "~/Views/Shared/_Form.cshtml";
+}
+<script src="~/Content/js/template/baiduTemplate.js"></script>
+<style>
+    .name {
+        text-align: right;
+        width: 150px;
+    }
+
+    .value {
+        text-align: left;
+    }
+</style>
+<body>
+    <script>
+        var keyValue = $.request("keyValue");
+        var operation_id = "";
+
+        $(function () {
+            GetForm();
+        });
+
+        //获取主索引变动记录
+        function GetForm() {
+            if (!!keyValue) {
+                $.ajax({
+                    url: "/IndexManage/Operation/GetForm",
+                    data: { keyValue: keyValue },
+                    dataType: "json",
+                    async: false,
+                    success: function (data) {
+                        var typeName = "";
+                        for (var key in data) {
+
+                            var element = $("#" + key + "");
+
+                            if (key == "OPERATION_TYPE") {
+                                switch (data[key]) {
+                                    case "ADD":
+                                        typeName = "新增";
+                                        break;
+                                    case "UPDATE":
+                                        typeName = "修改";
+                                        break;
+                                    case "MERGE":
+                                        typeName = "合并";
+                                        break;
+                                    case "SPLIT":
+                                        typeName = "拆分";
+                                        break;
+                                    case "POTENTIAL_DUPLICATE":
+                                        typeName = "潜在重复";
+                                        break;
+                                    case "ACTIVE":
+                                        typeName = "启用";
+                                        break;
+                                    case "DISABLE":
+                                        typeName = "停用";
+                                        break;
+                                    default:
+                                        typeName = "未定义";
+                                        break;
+                                }
+                                $("#OPERATION_TYPE").text(typeName);
+                                continue;
+                            } else if (key == "RESOLVED_STATUS") {
+                                if (data[key] == "R") {
+                                    data[key] = "已解决";
+                                } else if (data[key] == "U") {
+                                    data[key] = "未解决";
+                                } else {
+
+                                }
+                            }
+
+                            if (element != null) {
+                                element.text(data[key]);
+                            }
+                        }
+                        btn_detail(data.PERSON_SBR_ID_LIST[0], data.OPERATION_TYPE);
+                    }
+                });
+            }
+        }
+
+        //查看详细
+        function btn_detail(_id, _type) {
+
+            switch (_type) {
+                case "ADD":
+                    type_add(_id);
+                    break;
+                case "UPDATE":
+                    type_update(_id);
+                    break;
+                case "MERGE":
+                    type_merge_split(_id, _type);
+                    break;
+                case "SPLIT":
+                    type_merge_split(_id, _type);
+                    break;
+                case "POTENTIAL_DUPLICATE":
+                    type_potentialL_duplicate(_id);
+                    break;
+                case "ACTIVE":
+                    type_merge_split(_id, _type);
+                    break;
+                case "DISABLE":
+                    type_merge_split(_id, _type);
+                    break;
+                default:
+            }
+        }
+
+        //新增类型
+        function type_add(_id) {
+            var strHtml = "";
+            if (!!_id) {
+                $.ajax({
+                    url: "/IndexManage/PrimaryIndex/GetFormJson",
+                    data: { keyValue: _id },
+                    dataType: "json",
+                    async: false,
+                    success: function (data) {
+                        // console.log(data);
+                        if (!!data) {
+                            for (var key in data) {
+                                if (data[key] == null) {
+                                    data[key] = "";
+                                }
+                            }
+                            strHtml = baidu.template('add-template', data);
+                        }
+                    }
+                });
+            }
+            $("#detailsBody").html(strHtml);
+        }
+
+        //修改类型
+        function type_update(_id) {
+            var strHtml = "";
+            var obj = {};
+            if (!!_id) {
+                $.ajax({
+                    url: "/IndexManage/PrimaryIndex/GetOperationEntityJson",
+                    data: { keyValue: _id, operation_ID: keyValue },
+                    dataType: "text",
+                    async: false,
+                    success: function (data) {
+                        if (!!data) {
+
+                            data = $.parseJSON(data);
+
+                            for (var key in data.BEFORE_UPDATE) {
+
+                                if (data.BEFORE_UPDATE[key] == null) {
+                                    data.BEFORE_UPDATE[key] = "";
+                                }
+                                obj["" + key + "_1"] = data.BEFORE_UPDATE[key];
+                            }
+
+                            for (var key in data.AFTER_UPDATE) {
+                                if (data.AFTER_UPDATE[key] == null) {
+                                    data.AFTER_UPDATE[key] = "";
+                                }
+                                obj["" + key + "_0"] = data.AFTER_UPDATE[key];
+                            }
+
+                            strHtml = baidu.template('edit-template', obj);
+                        }
+                    }
+                });
+            }
+            $("#detailsBody").html(strHtml);
+        }
+
+        //合并、拆分类型
+        function type_merge_split(_id, _type) {
+
+            var strHtml = "";
+            var obj = { TableTitle: "合并详情" };
+            if (_type == "SPLIT") {
+                obj.TableTitle = "拆分详情";
+            }
+            if (!!_id) {
+                $.ajax({
+                    url: "/IndexManage/PrimaryIndex/GetOperationEntityJson",
+                    data: { keyValue: _id, operation_ID: keyValue },
+                    dataType: "text",
+                    async: false,
+                    success: function (data) {
+                        if (!!data) {
+
+                            data = $.parseJSON(data);
+
+                            for (var key in data.MATCH_0) {
+
+                                if (data.MATCH_0[key] == null) {
+                                    data.MATCH_0[key] = "";
+                                }
+                                obj["" + key + "_0"] = data.MATCH_0[key];
+                            }
+
+                            for (var key in data.MATCH_1) {
+                                if (data.MATCH_1[key] == null) {
+                                    data.MATCH_1[key] = "";
+                                }
+                                obj["" + key + "_1"] = data.MATCH_1[key];
+                            }
+
+                            strHtml = baidu.template('split-merge-template', obj);
+                        }
+                    }
+                });
+            }
+
+            $("#detailsBody").html(strHtml);
+
+        }
+
+        //潜在重复
+        function type_potentialL_duplicate(_id) {
+            var strHtml = "";
+            var obj = { TableTitle: "潜在重复详情" };
+
+            if (!!_id) {
+                $.ajax({
+                    url: "/IndexManage/PrimaryIndex/GetOperationEntityJson",
+                    data: { keyValue: _id, operation_ID: keyValue },
+                    dataType: "text",
+                    async: false,
+                    success: function (data) {
+                        if (!!data) {
+
+                            data = $.parseJSON(data);
+
+                            for (var key in data.DUPLICATE_0) {
+
+                                if (data.DUPLICATE_0[key] == null) {
+                                    data.DUPLICATE_0[key] = "";
+                                }
+                                obj["" + key + "_0"] = data.DUPLICATE_0[key];
+                            }
+
+                            for (var key in data.DUPLICATE_1) {
+                                if (data.DUPLICATE_1[key] == null) {
+                                    data.DUPLICATE_1[key] = "";
+                                }
+                                obj["" + key + "_1"] = data.DUPLICATE_1[key];
+                            }
+
+                            strHtml = baidu.template('split-merge-template', obj);
+                        }
+                    }
+                });
+            }
+
+            $("#detailsBody").html(strHtml);
+        }
+
+    </script>
+
+    <div style="padding: 10px 10px 10px 10px;">
+        <h4><strong>基本信息</strong></h4>
+        <table class="table table-bordered">
+            <tr>
+                <td class="name">日志主键</td>
+                <td class="value">
+                    <label id="OPERATION_ID"></label>
+                </td>
+                <td class="name">操作类型</td>
+                <td class="value">
+                    <label id="OPERATION_TYPE"></label>
+                </td>
+            </tr>
+            <tr>
+                <td class="name">操作人</td>
+                <td class="value">
+                    <label id="OPERATE_BY"></label>
+                </td>
+                <td class="name">操作时间</td>
+                <td class="value">
+                    <label id="OPERATE_TIME"></label>
+                </td>
+            </tr>
+            <tr>
+                <td class="name">匹配权重</td>
+                <td class="value">
+                    <label id="MATCH_WEIGHT"></label>
+                </td>
+                <td class="name">是否解决</td>
+                <td class="value">
+                    <label id="RESOLVED_STATUS"></label>
+                </td>
+            </tr>
+            <tr>
+                <td class="name">解决人</td>
+                <td class="value">
+                    <label id="RESOLVED_BY"></label>
+                </td>
+                <td class="name">解决时间</td>
+                <td class="value">
+                    <label id="RESOLVED_TIME"></label>
+                </td>
+            </tr>
+        </table>
+
+        <h4><strong>日志明细</strong></h4>
+        <div id="detailsBody"></div>
+
+    </div>
+
+    @*新增模板*@
+    <script id="add-template" type="text/html">
+
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <tr>
+                    <th style="text-align: right;">名称</th>
+                    <th style="text-align: left;">值</th>
+                </tr>
+                <tr>
+                    <td class="name">主索引号</td>
+                    <td class="value"><%=EMPI_ID%></td>
+                </tr>
+                <tr>
+                    <td class="name">姓名</td>
+                    <td class="value"><%=NAME%></td>
+                </tr>
+                <tr>
+                    <td class="name">人员分类</td>
+                    <td class="value"><%=CATEGORY_CODE%></td>
+                </tr>
+                <tr>
+                    <td class="name">身份证件号码</td>
+                    <td class="value"><%=ID_NO%></td>
+                </tr>
+                <tr>
+                    <td class="name">性别</td>
+                    <td class="value"><%=GENDER_NAME%></td>
+                </tr>
+                <tr>
+                    <td class="name">病案号</td>
+                    <td class="value"><%=MEDICAL_RECORD_NO%></td>
+                </tr>
+                <tr>
+                    <td class="name">居民健康卡号</td>
+                    <td class="value"><%=HEALTH_CARD_NO%></td>
+                </tr>
+                <tr>
+                    <td class="name">本人电话号码</td>
+                    <td class="value"><%=PHONE_NO%></td>
+                </tr>
+                <tr>
+                    <td class="name">出生日期</td>
+                    <td class="value"><%=DOB%></td>
+                </tr>
+                <tr>
+                    <td class="name">身份证件类别代码</td>
+                    <td class="value"><%=ID_TYPE_CODE%></td>
+                </tr>
+                <tr>
+                    <td class="name">身份证件类别名称</td>
+                    <td class="value"><%=ID_TYPE_NAME%></td>
+                </tr>
+                <tr>
+                    <td class="name">医疗保险类别代码</td>
+                    <td class="value"><%=MEDICAL_INSURANCE_TYPE_CODE%></td>
+                </tr>
+                <tr>
+                    <td class="name">医疗保险类别名称</td>
+                    <td class="value"><%=MEDICAL_INSURANCE_TYPE_NAME%></td>
+                </tr>
+                <tr>
+                    <td class="name">医保卡号</td>
+                    <td class="value"><%=MEDICAL_INSURANCE_CARD_NO%></td>
+                </tr>
+                <tr>
+                    <td class="name">就诊卡号</td>
+                    <td class="value"><%=HOSPITAL_CARD_NO%></td>
+                </tr>
+                <tr>
+                    <td class="name">门诊病案号</td>
+                    <td class="value"><%=OP_MEDICAL_RECORD_NO%></td>
+                </tr>
+                <tr>
+                    <td class="name">京易通卡号</td>
+                    <td class="value"><%=BEIJING_MEDICAL_CARD_NO%></td>
+                </tr>
+                <tr>
+                    <td class="name">ABO血型名称</td>
+                    <td class="value"><%=ABO_BLOOD_TYPE_NAME%></td>
+                </tr>
+                <tr>
+                    <td class="name">Rh血型名称</td>
+                    <td class="value"><%=RH_BLOOD_TYPE_NAME%></td>
+                </tr>
+                <tr>
+                    <td class="name">国籍</td>
+                    <td class="value"><%=CITIZENSHIP_NAME%></td>
+                </tr>
+                <tr>
+                    <td class="name">民族</td>
+                    <td class="value"><%=ETHNIC_GROUP_NAME%></td>
+                </tr>
+                <tr>
+                    <td class="name">职业类别</td>
+                    <td class="value"><%=OCCUPATION_NAME%></td>
+                </tr>
+                <tr>
+                    <td class="name">文化程度</td>
+                    <td class="value"><%=EDUCATION_LEVEL_NAME%></td>
+                </tr>
+                <tr>
+                    <td class="name">出生地-省</td>
+                    <td class="value"><%=POB_PROVINCE%></td>
+                </tr>
+                <tr>
+                    <td class="name">出生地-市</td>
+                    <td class="value"><%=POB_CITY%></td>
+                </tr>
+                <tr>
+                    <td class="name">出生地-县</td>
+                    <td class="value"><%=POB_COUNTY%></td>
+                </tr>
+                <tr>
+                    <td class="name">籍贯-省</td>
+                    <td class="value"><%=NATIVE_PLACE_PROVINCE%></td>
+                </tr>
+                <tr>
+                    <td class="name">籍贯-市</td>
+                    <td class="value"><%=NATIVE_PLACE_CITY%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-省</td>
+                    <td class="value"><%=PRESENT_ADDRESS_PROVINCE%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-市</td>
+                    <td class="value"><%=PRESENT_ADDRESS_CITY%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-县</td>
+                    <td class="value"><%=PRESENT_ADDRESS_COUNTY%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-乡</td>
+                    <td class="value"><%=PRESENT_ADDRES_COUNTRY%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-村</td>
+                    <td class="value"><%=PRESENT_ADDRES_VILLAGE%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-门牌号码</td>
+                    <td class="value"><%=PRESENT_ADDRES_HOUSE_NO%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-邮编</td>
+                    <td class="value"><%=PRESENT_ADDRES_POSTAL_CODE%></td>
+                </tr>
+                <tr>
+                    <td class="name">工作单位名称</td>
+                    <td class="value"><%=EMPLOYER_NAME%></td>
+                </tr>
+                <tr>
+                    <td class="name">工作单位-省</td>
+                    <td class="value"><%=EMPLOYER_PROVINCE%></td>
+                </tr>
+                <tr>
+                    <td class="name">工作单位-市</td>
+                    <td class="value"><%=EMPLOYER_CITY%></td>
+                </tr>
+                <tr>
+                    <td class="name">工作单位-县</td>
+                    <td class="value"><%=EMPLOYER_COUNTY%></td>
+                </tr>
+                <tr>
+                    <td class="name">工作单位电话号码</td>
+                    <td class="value"><%=EMPLOYER_PHONE_NO%></td>
+                </tr>
+                <tr>
+                    <td class="name">工作单位-邮编</td>
+                    <td class="value"><%=EMPLOYER_POSTAL_CODE%></td>
+                </tr>
+                <tr>
+                    <td class="name">联系人姓名</td>
+                    <td class="value"><%=CONTACT_NAME%></td>
+                </tr>
+                <tr>
+                    <td class="name">联系人地址</td>
+                    <td class="value"><%=CONTACT_ADDRESS%></td>
+                </tr>
+                <tr>
+                    <td class="name">联系人同本人关系名称</td>
+                    <td class="value"><%=CONTACT_RELATIONSHIP_NAME%></td>
+                </tr>
+                <tr>
+                    <td class="name">联系人同本人关系代码</td>
+                    <td class="value"><%=CONTACT_RELATIONSHIP_CODE%></td>
+                </tr>
+                <tr>
+                    <td class="name">联系人电话号码</td>
+                    <td class="value"><%=CONTACT_PHONE_NO%></td>
+                </tr>
+                <tr>
+                    <td class="name">VIP标识</td>
+                    <td class="value"><%=VIP_INDICATOR%></td>
+                </tr>
+                <tr>
+                    <td class="name">死亡标识</td>
+                    <td class="value"><%=DEATH_INDICATOR%></td>
+                </tr>
+                <tr>
+                    <td class="name">死亡日期</td>
+                    <td class="value"><%=DOD%></td>
+                </tr>
+                <tr>
+                    <td class="name">状态</td>
+                    <td class="value"><%=STATUS%></td>
+                </tr>
+                <tr>
+                    <td class="name">婚姻状况</td>
+                    <td class="value"><%=MARITAL_STATUS_NAME%></td>
+                </tr>
+            </table>
+        </div>
+    </script>
+
+    @*修改模板*@
+    <script id="edit-template" type="text/html">
+
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <tr>
+                    <th style="text-align: center;">名称</th>
+                    <th style="text-align: center;">修改后</th>
+                    <th style="text-align: center;">修改前</th>
+                </tr>
+                <tr>
+                    <td class="name">主索引号</td>
+                    <td class="value"><%=EMPI_ID_0%></td>
+                    <td class="value"><%=EMPI_ID_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">姓名</td>
+                    <td class="value"><%=NAME_0%></td>
+                    <td class="value"><%=NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">人员分类</td>
+                    <td class="value"><%=CATEGORY_CODE_0%></td>
+                    <td class="value"><%=CATEGORY_CODE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">身份证件号码</td>
+                    <td class="value"><%=ID_NO_0%></td>
+                    <td class="value"><%=ID_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">性别</td>
+                    <td class="value"><%=GENDER_NAME_0%></td>
+                    <td class="value"><%=GENDER_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">病案号</td>
+                    <td class="value"><%=MEDICAL_RECORD_NO_0%></td>
+                    <td class="value"><%=MEDICAL_RECORD_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">居民健康卡号</td>
+                    <td class="value"><%=HEALTH_CARD_NO_0%></td>
+                    <td class="value"><%=HEALTH_CARD_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">本人电话号码</td>
+                    <td class="value"><%=PHONE_NO_0%></td>
+                    <td class="value"><%=PHONE_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">出生日期</td>
+                    <td class="value"><%=DOB_0%></td>
+                    <td class="value"><%=DOB_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">婚姻状况</td>
+                    <td class="value"><%=MARITAL_STATUS_NAME_0%></td>
+                    <td class="value"><%=MARITAL_STATUS_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">身份证件类别代码</td>
+                    <td class="value"><%=ID_TYPE_CODE_0%></td>
+                    <td class="value"><%=ID_TYPE_CODE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">身份证件类别名称</td>
+                    <td class="value"><%=ID_TYPE_NAME_0%></td>
+                    <td class="value"><%=ID_TYPE_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">医疗保险类别代码</td>
+                    <td class="value"><%=MEDICAL_INSURANCE_TYPE_CODE_0%></td>
+                    <td class="value"><%=MEDICAL_INSURANCE_TYPE_CODE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">医疗保险类别名称</td>
+                    <td class="value"><%=MEDICAL_INSURANCE_TYPE_NAME_0%></td>
+                    <td class="value"><%=MEDICAL_INSURANCE_TYPE_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">医保卡号</td>
+                    <td class="value"><%=MEDICAL_INSURANCE_CARD_NO_0%></td>
+                    <td class="value"><%=MEDICAL_INSURANCE_CARD_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">就诊卡号</td>
+                    <td class="value"><%=HOSPITAL_CARD_NO_0%></td>
+                    <td class="value"><%=HOSPITAL_CARD_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">门诊病案号</td>
+                    <td class="value"><%=OP_MEDICAL_RECORD_NO_0%></td>
+                    <td class="value"><%=OP_MEDICAL_RECORD_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">京易通卡号</td>
+                    <td class="value"><%=BEIJING_MEDICAL_CARD_NO_0%></td>
+                    <td class="value"><%=BEIJING_MEDICAL_CARD_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">ABO血型名称</td>
+                    <td class="value"><%=ABO_BLOOD_TYPE_NAME_0%></td>
+                    <td class="value"><%=ABO_BLOOD_TYPE_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">Rh血型名称</td>
+                    <td class="value"><%=RH_BLOOD_TYPE_NAME_0%></td>
+                    <td class="value"><%=RH_BLOOD_TYPE_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">国籍</td>
+                    <td class="value"><%=CITIZENSHIP_NAME_0%></td>
+                    <td class="value"><%=CITIZENSHIP_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">民族</td>
+                    <td class="value"><%=ETHNIC_GROUP_NAME_0%></td>
+                    <td class="value"><%=ETHNIC_GROUP_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">职业类别</td>
+                    <td class="value"><%=OCCUPATION_NAME_0%></td>
+                    <td class="value"><%=OCCUPATION_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">文化程度</td>
+                    <td class="value"><%=EDUCATION_LEVEL_NAME_0%></td>
+                    <td class="value"><%=EDUCATION_LEVEL_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">出生地-省</td>
+                    <td class="value"><%=POB_PROVINCE_0%></td>
+                    <td class="value"><%=POB_PROVINCE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">出生地-市</td>
+                    <td class="value"><%=POB_CITY_0%></td>
+                    <td class="value"><%=POB_CITY_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">出生地-县</td>
+                    <td class="value"><%=POB_COUNTY_0%></td>
+                    <td class="value"><%=POB_COUNTY_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">籍贯-省</td>
+                    <td class="value"><%=NATIVE_PLACE_PROVINCE_0%></td>
+                    <td class="value"><%=NATIVE_PLACE_PROVINCE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">籍贯-市</td>
+                    <td class="value"><%=NATIVE_PLACE_CITY_0%></td>
+                    <td class="value"><%=NATIVE_PLACE_CITY_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-省</td>
+                    <td class="value"><%=PRESENT_ADDRESS_PROVINCE_0%></td>
+                    <td class="value"><%=PRESENT_ADDRESS_PROVINCE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-市</td>
+                    <td class="value"><%=PRESENT_ADDRESS_CITY_0%></td>
+                    <td class="value"><%=PRESENT_ADDRESS_CITY_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-县</td>
+                    <td class="value"><%=PRESENT_ADDRESS_COUNTY_0%></td>
+                    <td class="value"><%=PRESENT_ADDRESS_COUNTY_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-乡</td>
+                    <td class="value"><%=PRESENT_ADDRES_COUNTRY_0%></td>
+                    <td class="value"><%=PRESENT_ADDRES_COUNTRY_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-村</td>
+                    <td class="value"><%=PRESENT_ADDRES_VILLAGE_0%></td>
+                    <td class="value"><%=PRESENT_ADDRES_VILLAGE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-门牌号码</td>
+                    <td class="value"><%=PRESENT_ADDRES_HOUSE_NO_0%></td>
+                    <td class="value"><%=PRESENT_ADDRES_HOUSE_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-邮编</td>
+                    <td class="value"><%=PRESENT_ADDRES_POSTAL_CODE_0%></td>
+                    <td class="value"><%=PRESENT_ADDRES_POSTAL_CODE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">工作单位名称</td>
+                    <td class="value"><%=EMPLOYER_NAME_0%></td>
+                    <td class="value"><%=EMPLOYER_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">工作单位-省</td>
+                    <td class="value"><%=EMPLOYER_PROVINCE_0%></td>
+                    <td class="value"><%=EMPLOYER_PROVINCE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">工作单位-市</td>
+                    <td class="value"><%=EMPLOYER_CITY_0%></td>
+                    <td class="value"><%=EMPLOYER_CITY_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">工作单位-县</td>
+                    <td class="value"><%=EMPLOYER_COUNTY_0%></td>
+                    <td class="value"><%=EMPLOYER_COUNTY_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">工作单位电话号码</td>
+                    <td class="value"><%=EMPLOYER_PHONE_NO_0%></td>
+                    <td class="value"><%=EMPLOYER_PHONE_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">工作单位-邮编</td>
+                    <td class="value"><%=EMPLOYER_POSTAL_CODE_0%></td>
+                    <td class="value"><%=EMPLOYER_POSTAL_CODE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">联系人姓名</td>
+                    <td class="value"><%=CONTACT_NAME_0%></td>
+                    <td class="value"><%=CONTACT_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">联系人地址</td>
+                    <td class="value"><%=CONTACT_ADDRESS_0%></td>
+                    <td class="value"><%=CONTACT_ADDRESS_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">联系人同本人关系名称</td>
+                    <td class="value"><%=CONTACT_RELATIONSHIP_NAME_0%></td>
+                    <td class="value"><%=CONTACT_RELATIONSHIP_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">联系人同本人关系代码</td>
+                    <td class="value"><%=CONTACT_RELATIONSHIP_CODE_0%></td>
+                    <td class="value"><%=CONTACT_RELATIONSHIP_CODE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">联系人电话号码</td>
+                    <td class="value"><%=CONTACT_PHONE_NO_0%></td>
+                    <td class="value"><%=CONTACT_PHONE_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">VIP标识</td>
+                    <td class="value"><%=VIP_INDICATOR_0%></td>
+                    <td class="value"><%=VIP_INDICATOR_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">死亡标识</td>
+                    <td class="value"><%=DEATH_INDICATOR_0%></td>
+                    <td class="value"><%=DEATH_INDICATOR_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">死亡日期</td>
+                    <td class="value"><%=DOD_0%></td>
+                    <td class="value"><%=DOD_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">状态</td>
+                    <td class="value"><%=STATUS_0%></td>
+                    <td class="value"><%=STATUS_1%></td>
+                </tr>
+            </table>
+        </div>
+    </script>
+
+    @*合并模板、拆分模板、潜在重复*@
+    <script id="split-merge-template" type="text/html">
+
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <tr>
+                    <th style="text-align: center;">名称</th>
+                    <th style="text-align: center;">主索引</th>
+                    <th style="text-align: center;">目标索引</th>
+                </tr>
+                <tr>
+                    <td class="name">主索引号</td>
+                    <td class="value"><%=EMPI_ID_0%></td>
+                    <td class="value"><%=EMPI_ID_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">姓名</td>
+                    <td class="value"><%=NAME_0%></td>
+                    <td class="value"><%=NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">人员分类</td>
+                    <td class="value"><%=CATEGORY_CODE_0%></td>
+                    <td class="value"><%=CATEGORY_CODE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">身份证件号码</td>
+                    <td class="value"><%=ID_NO_0%></td>
+                    <td class="value"><%=ID_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">性别</td>
+                    <td class="value"><%=GENDER_NAME_0%></td>
+                    <td class="value"><%=GENDER_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">病案号</td>
+                    <td class="value"><%=MEDICAL_RECORD_NO_0%></td>
+                    <td class="value"><%=MEDICAL_RECORD_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">居民健康卡号</td>
+                    <td class="value"><%=HEALTH_CARD_NO_0%></td>
+                    <td class="value"><%=HEALTH_CARD_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">本人电话号码</td>
+                    <td class="value"><%=PHONE_NO_0%></td>
+                    <td class="value"><%=PHONE_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">出生日期</td>
+                    <td class="value"><%=DOB_0%></td>
+                    <td class="value"><%=DOB_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">婚姻状况</td>
+                    <td class="value"><%=MARITAL_STATUS_NAME_0%></td>
+                    <td class="value"><%=MARITAL_STATUS_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">身份证件类别代码</td>
+                    <td class="value"><%=ID_TYPE_CODE_0%></td>
+                    <td class="value"><%=ID_TYPE_CODE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">身份证件类别名称</td>
+                    <td class="value"><%=ID_TYPE_NAME_0%></td>
+                    <td class="value"><%=ID_TYPE_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">医疗保险类别代码</td>
+                    <td class="value"><%=MEDICAL_INSURANCE_TYPE_CODE_0%></td>
+                    <td class="value"><%=MEDICAL_INSURANCE_TYPE_CODE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">医疗保险类别名称</td>
+                    <td class="value"><%=MEDICAL_INSURANCE_TYPE_NAME_0%></td>
+                    <td class="value"><%=MEDICAL_INSURANCE_TYPE_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">医保卡号</td>
+                    <td class="value"><%=MEDICAL_INSURANCE_CARD_NO_0%></td>
+                    <td class="value"><%=MEDICAL_INSURANCE_CARD_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">就诊卡号</td>
+                    <td class="value"><%=HOSPITAL_CARD_NO_0%></td>
+                    <td class="value"><%=HOSPITAL_CARD_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">门诊病案号</td>
+                    <td class="value"><%=OP_MEDICAL_RECORD_NO_0%></td>
+                    <td class="value"><%=OP_MEDICAL_RECORD_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">京易通卡号</td>
+                    <td class="value"><%=BEIJING_MEDICAL_CARD_NO_0%></td>
+                    <td class="value"><%=BEIJING_MEDICAL_CARD_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">ABO血型名称</td>
+                    <td class="value"><%=ABO_BLOOD_TYPE_NAME_0%></td>
+                    <td class="value"><%=ABO_BLOOD_TYPE_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">Rh血型名称</td>
+                    <td class="value"><%=RH_BLOOD_TYPE_NAME_0%></td>
+                    <td class="value"><%=RH_BLOOD_TYPE_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">国籍</td>
+                    <td class="value"><%=CITIZENSHIP_NAME_0%></td>
+                    <td class="value"><%=CITIZENSHIP_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">民族</td>
+                    <td class="value"><%=ETHNIC_GROUP_NAME_0%></td>
+                    <td class="value"><%=ETHNIC_GROUP_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">职业类别</td>
+                    <td class="value"><%=OCCUPATION_NAME_0%></td>
+                    <td class="value"><%=OCCUPATION_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">文化程度</td>
+                    <td class="value"><%=EDUCATION_LEVEL_NAME_0%></td>
+                    <td class="value"><%=EDUCATION_LEVEL_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">出生地-省</td>
+                    <td class="value"><%=POB_PROVINCE_0%></td>
+                    <td class="value"><%=POB_PROVINCE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">出生地-市</td>
+                    <td class="value"><%=POB_CITY_0%></td>
+                    <td class="value"><%=POB_CITY_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">出生地-县</td>
+                    <td class="value"><%=POB_COUNTY_0%></td>
+                    <td class="value"><%=POB_COUNTY_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">籍贯-省</td>
+                    <td class="value"><%=NATIVE_PLACE_PROVINCE_0%></td>
+                    <td class="value"><%=NATIVE_PLACE_PROVINCE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">籍贯-市</td>
+                    <td class="value"><%=NATIVE_PLACE_CITY_0%></td>
+                    <td class="value"><%=NATIVE_PLACE_CITY_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-省</td>
+                    <td class="value"><%=PRESENT_ADDRESS_PROVINCE_0%></td>
+                    <td class="value"><%=PRESENT_ADDRESS_PROVINCE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-市</td>
+                    <td class="value"><%=PRESENT_ADDRESS_CITY_0%></td>
+                    <td class="value"><%=PRESENT_ADDRESS_CITY_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-县</td>
+                    <td class="value"><%=PRESENT_ADDRESS_COUNTY_0%></td>
+                    <td class="value"><%=PRESENT_ADDRESS_COUNTY_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-乡</td>
+                    <td class="value"><%=PRESENT_ADDRES_COUNTRY_0%></td>
+                    <td class="value"><%=PRESENT_ADDRES_COUNTRY_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-村</td>
+                    <td class="value"><%=PRESENT_ADDRES_VILLAGE_0%></td>
+                    <td class="value"><%=PRESENT_ADDRES_VILLAGE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-门牌号码</td>
+                    <td class="value"><%=PRESENT_ADDRES_HOUSE_NO_0%></td>
+                    <td class="value"><%=PRESENT_ADDRES_HOUSE_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">现住址-邮编</td>
+                    <td class="value"><%=PRESENT_ADDRES_POSTAL_CODE_0%></td>
+                    <td class="value"><%=PRESENT_ADDRES_POSTAL_CODE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">工作单位名称</td>
+                    <td class="value"><%=EMPLOYER_NAME_0%></td>
+                    <td class="value"><%=EMPLOYER_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">工作单位-省</td>
+                    <td class="value"><%=EMPLOYER_PROVINCE_0%></td>
+                    <td class="value"><%=EMPLOYER_PROVINCE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">工作单位-市</td>
+                    <td class="value"><%=EMPLOYER_CITY_0%></td>
+                    <td class="value"><%=EMPLOYER_CITY_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">工作单位-县</td>
+                    <td class="value"><%=EMPLOYER_COUNTY_0%></td>
+                    <td class="value"><%=EMPLOYER_COUNTY_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">工作单位电话号码</td>
+                    <td class="value"><%=EMPLOYER_PHONE_NO_0%></td>
+                    <td class="value"><%=EMPLOYER_PHONE_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">工作单位-邮编</td>
+                    <td class="value"><%=EMPLOYER_POSTAL_CODE_0%></td>
+                    <td class="value"><%=EMPLOYER_POSTAL_CODE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">联系人姓名</td>
+                    <td class="value"><%=CONTACT_NAME_0%></td>
+                    <td class="value"><%=CONTACT_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">联系人地址</td>
+                    <td class="value"><%=CONTACT_ADDRESS_0%></td>
+                    <td class="value"><%=CONTACT_ADDRESS_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">联系人同本人关系名称</td>
+                    <td class="value"><%=CONTACT_RELATIONSHIP_NAME_0%></td>
+                    <td class="value"><%=CONTACT_RELATIONSHIP_NAME_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">联系人同本人关系代码</td>
+                    <td class="value"><%=CONTACT_RELATIONSHIP_CODE_0%></td>
+                    <td class="value"><%=CONTACT_RELATIONSHIP_CODE_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">联系人电话号码</td>
+                    <td class="value"><%=CONTACT_PHONE_NO_0%></td>
+                    <td class="value"><%=CONTACT_PHONE_NO_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">VIP标识</td>
+                    <td class="value"><%=VIP_INDICATOR_0%></td>
+                    <td class="value"><%=VIP_INDICATOR_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">死亡标识</td>
+                    <td class="value"><%=DEATH_INDICATOR_0%></td>
+                    <td class="value"><%=DEATH_INDICATOR_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">死亡日期</td>
+                    <td class="value"><%=DOD_0%></td>
+                    <td class="value"><%=DOD_1%></td>
+                </tr>
+                <tr>
+                    <td class="name">状态</td>
+                    <td class="value"><%=STATUS_0%></td>
+                    <td class="value"><%=STATUS_1%></td>
+                </tr>
+            </table>
+        </div>
+    </script>
+</body>

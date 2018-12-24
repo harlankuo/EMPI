@@ -1,0 +1,64 @@
+﻿@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Index.cshtml";
+}
+<style>
+    ul li {
+        float: left;
+        list-style-type: none;
+        margin-right: 20px;
+    }
+
+    ul span {
+        font-size: 15px;
+    }
+</style>
+<script>
+
+    //机构管理
+    function btn_org() {
+        $.modalOpen({
+            id: "Form",
+            title: "机构管理",
+            url: "/IndexManage/SystemManage/IndexOrg",
+            width: "700px",
+            height: "550px",
+            btn: null
+        });
+    }
+
+    //系统管理
+    function btn_sys() {
+        $.modalOpen({
+            id: "Form",
+            title: "系统管理",
+            url: "/IndexManage/SystemManage/IndexSys",
+            width: "700px",
+            height: "550px",
+            btn: null
+        });
+    }
+</script>
+<div class="container" style="margin: 5px 5px 5px 5px;">
+    <div class="row">
+        <div class="col-md-12">
+            <h5><strong>基础设置</strong></h5>
+            <hr />
+            <ul>
+                <li>
+                    <a class="btn btn-lg btn-warning" href="javascript:btn_org();" style="height: 60px; width: 60px;">
+                        <i class="fa fa-university fa-2x pull-center"></i>
+                        <br />
+                        <span>机构管理</span></a>
+
+                <li>
+                    <a class="btn btn-lg btn-success" href="javascript:btn_sys();" style="height: 60px; width: 60px;">
+                        <i class="fa fa-television fa-2x pull-center"></i>
+                        <br />
+                        <span>系统管理</span></a>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
